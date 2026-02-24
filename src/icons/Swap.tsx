@@ -1,4 +1,64 @@
-export default function SwapIcon() {
+export default function SwapIcon({ big = false }: { big?: boolean }) {
+  const size = big ? 55 : 24
+  
+  if (big) {
+    return (
+      <svg
+        xmlns='http://www.w3.org/2000/svg'
+        width={size}
+        height={size}
+        viewBox='0 0 78 78'
+        fill='none'
+        role='img'
+        aria-label='Swap icon'
+      >
+        <defs>
+          <linearGradient id='swapGradient1' x1='0%' y1='0%' x2='100%' y2='100%'>
+            <stop offset='0%' stopColor='#6366F1' />
+            <stop offset='100%' stopColor='#8B5CF6' />
+          </linearGradient>
+          <linearGradient id='swapGradient2' x1='100%' y1='0%' x2='0%' y2='100%'>
+            <stop offset='0%' stopColor='#F59E0B' />
+            <stop offset='100%' stopColor='#EF4444' />
+          </linearGradient>
+        </defs>
+        <circle cx='39' cy='39' r='37.5' stroke='url(#swapGradient1)' strokeWidth='3' fill='#1a1a2e' />
+        <path
+          d='M20 28H50L44 22'
+          stroke='url(#swapGradient1)'
+          strokeWidth='4'
+          strokeLinecap='round'
+          strokeLinejoin='round'
+          fill='none'
+        />
+        <path
+          d='M50 28L44 34'
+          stroke='url(#swapGradient1)'
+          strokeWidth='4'
+          strokeLinecap='round'
+          strokeLinejoin='round'
+          fill='none'
+        />
+        <path
+          d='M58 50H28L34 44'
+          stroke='url(#swapGradient2)'
+          strokeWidth='4'
+          strokeLinecap='round'
+          strokeLinejoin='round'
+          fill='none'
+        />
+        <path
+          d='M28 50L34 56'
+          stroke='url(#swapGradient2)'
+          strokeWidth='4'
+          strokeLinecap='round'
+          strokeLinejoin='round'
+          fill='none'
+        />
+      </svg>
+    )
+  }
+  
   return (
     <svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'>
       <path

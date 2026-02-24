@@ -30,6 +30,8 @@ import AppStatement from '../screens/Apps/Statement/Index'
 import AppReferral from '../screens/Apps/Referral/Index'
 import AppGiftCards from '../screens/Apps/GiftCards/Index'
 import AppCardReservation from '../screens/Apps/CardReservation/Index'
+import AppSwap from '../screens/Apps/Swap/Index'
+import AppSwapOrderDetails from '../screens/Apps/Swap/OrderDetails'
 import Unavailable from '../screens/Wallet/Unavailable'
 import Verification from '../screens/Settings/Verification'
 
@@ -43,6 +45,8 @@ export enum Pages {
   AppReferral,
   AppGiftCards,
   AppCardReservation,
+  AppSwap,
+  AppSwapOrderDetails,
   Apps,
   Init,
   InitRestore,
@@ -86,6 +90,8 @@ const pageTab = {
   [Pages.AppReferral]: Tabs.Apps,
   [Pages.AppGiftCards]: Tabs.Apps,
   [Pages.AppCardReservation]: Tabs.Apps,
+  [Pages.AppSwap]: Tabs.Apps,
+  [Pages.AppSwapOrderDetails]: Tabs.Apps,
   [Pages.Apps]: Tabs.Apps,
   [Pages.Init]: Tabs.None,
   [Pages.InitRestore]: Tabs.None,
@@ -132,6 +138,10 @@ export const pageComponent = (page: Pages): JSX.Element => {
       return <AppGiftCards />
     case Pages.AppCardReservation:
       return <AppCardReservation />
+    case Pages.AppSwap:
+      return <AppSwap />
+    case Pages.AppSwapOrderDetails:
+      return <AppSwapOrderDetails />
     case Pages.Apps:
       return <Apps />
     case Pages.Init:

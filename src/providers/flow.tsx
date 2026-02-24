@@ -1,6 +1,7 @@
 import { PendingReverseSwap, PendingSubmarineSwap } from '@arkade-os/boltz-swap'
 import { ReactNode, createContext, useState } from 'react'
 import { Tx } from '../lib/types'
+import { ChimeraOrder } from './chimera'
 
 export interface InitInfo {
   password?: string
@@ -48,6 +49,8 @@ export type SendInfo = {
 
 export type SwapInfo = PendingSubmarineSwap | PendingReverseSwap | undefined
 
+export type SwapOrderInfo = ChimeraOrder | undefined
+
 export type TxInfo = Tx | undefined
 
 interface FlowContextProps {
@@ -58,6 +61,7 @@ interface FlowContextProps {
   recvInfo: RecvInfo
   sendInfo: SendInfo
   swapInfo: SwapInfo
+  swapOrderInfo: SwapOrderInfo
   txInfo: TxInfo
   setInitInfo: (arg0: InitInfo) => void
   setKycAuthParams: (arg0: KycAuthParams | undefined) => void
@@ -66,6 +70,7 @@ interface FlowContextProps {
   setRecvInfo: (arg0: RecvInfo) => void
   setSendInfo: (arg0: SendInfo) => void
   setSwapInfo: (arg0: SwapInfo) => void
+  setSwapOrderInfo: (arg0: SwapOrderInfo) => void
   setTxInfo: (arg0: TxInfo) => void
 }
 
@@ -102,6 +107,7 @@ export const FlowContext = createContext<FlowContextProps>({
   recvInfo: emptyRecvInfo,
   sendInfo: emptySendInfo,
   swapInfo: undefined,
+  swapOrderInfo: undefined,
   txInfo: undefined,
   setInitInfo: () => {},
   setKycAuthParams: () => {},
@@ -110,6 +116,7 @@ export const FlowContext = createContext<FlowContextProps>({
   setRecvInfo: () => {},
   setSendInfo: () => {},
   setSwapInfo: () => {},
+  setSwapOrderInfo: () => {},
   setTxInfo: () => {},
 })
 
@@ -121,6 +128,7 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
   const [recvInfo, setRecvInfo] = useState(emptyRecvInfo)
   const [sendInfo, setSendInfo] = useState(emptySendInfo)
   const [swapInfo, setSwapInfo] = useState<SwapInfo>()
+  const [swapOrderInfo, setSwapOrderInfo] = useState<SwapOrderInfo>()
   const [txInfo, setTxInfo] = useState<TxInfo>()
 
   return (
@@ -133,6 +141,7 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
         recvInfo,
         sendInfo,
         swapInfo,
+        swapOrderInfo,
         txInfo,
         setInitInfo,
         setKycAuthParams,
@@ -141,6 +150,7 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
         setRecvInfo,
         setSendInfo,
         setSwapInfo,
+        setSwapOrderInfo,
         setTxInfo,
       }}
     >

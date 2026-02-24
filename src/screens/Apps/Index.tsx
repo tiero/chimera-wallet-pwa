@@ -12,6 +12,7 @@ import BoltzIcon from '../../icons/Boltz'
 import FujiMoneyIcon from '../../icons/FujiMoney'
 import LendasatIcon from './Lendasat/LendasatIcon'
 import LendaswapIcon from './Lendaswap/LendaswapIcon'
+import SwapIcon from '../../icons/Swap'
 
 const Middot = () => (
   <svg width='6' height='6' viewBox='0 0 6 6' fill='none' xmlns='http://www.w3.org/2000/svg' aria-hidden='true'>
@@ -106,6 +107,14 @@ export default function Apps() {
       <Content>
         <Padded>
           <FlexCol>
+            <App
+              name='Swap'
+              icon={<SwapIcon big />}
+              desc='Swap fiat or crypto to Bitcoin'
+              page={Pages.AppSwap}
+              live
+            />
+
             <App
               name='Statement'
               image='/images/apps/Statement.png'
