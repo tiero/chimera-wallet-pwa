@@ -9,6 +9,8 @@ import Vtxos from './Vtxos'
 import NotesForm from '../Wallet/Notes/Form'
 import Server from './Server'
 import Support from './Support'
+import Verification from './Verification'
+import KnowledgeBase from './KnowledgeBase'
 import { OptionsContext } from '../../providers/options'
 import SettingsMenu from './Menu'
 import Logs from './Logs'
@@ -28,12 +30,18 @@ function settingsContent(option: SettingsOptions): JSX.Element {
       return <SettingsMenu />
     case SettingsOptions.About:
       return <About />
+    case SettingsOptions.AddressBook:
+      return <AddressBook />
     case SettingsOptions.Advanced:
       return <Advanced />
     case SettingsOptions.Backup:
       return <Backup />
     case SettingsOptions.General:
       return <General />
+    case SettingsOptions.KnowledgeBase:
+      return <KnowledgeBase />
+    case SettingsOptions.KYC:
+      return <Verification />
     case SettingsOptions.Lock:
       return <Lock />
     case SettingsOptions.Logs:
@@ -64,8 +72,6 @@ function settingsContent(option: SettingsOptions): JSX.Element {
       return <></>
   }
 }
-import Verification from './Verification'
-import KnowledgeBase from './KnowledgeBase'
 
 export default function Settings() {
   const { option, direction } = useContext(OptionsContext)

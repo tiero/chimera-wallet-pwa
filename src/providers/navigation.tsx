@@ -297,12 +297,11 @@ export const NavigationProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [pop])
 
-  const navigate = (page: Pages, data?: Record<string, unknown>) => {
   const goBack = useCallback(() => {
     history.back()
   }, [])
 
-  const navigate = (page: Pages) => {
+  const navigate = (page: Pages, data?: Record<string, unknown>) => {
     const nextTab = pageTab[page]
     const isTabSwitch = nextTab !== tab && ROOT_PAGES.has(page) && ROOT_PAGES.has(screen)
 
@@ -310,16 +309,12 @@ export const NavigationProvider = ({ children }: { children: ReactNode }) => {
     push(page)
     setDirection(isTabSwitch ? 'none' : 'forward')
     setScreen(page)
-    setTab(pageTab[page])
+    setTab(nextTab)
     setNavigationData(data)
   }
 
-  return <NavigationContext.Provider value={{ navigate, navigationData, screen, tab }}>{children}</NavigationContext.Provider>
-    setTab(nextTab)
-  }
-
   return (
-    <NavigationContext.Provider value={{ direction, goBack, isInitialLoad, navigate, screen, tab }}>
+    <NavigationContext.Provider value={{ direction, goBack, isInitialLoad, navigate, navigationData, screen, tab }}>
       {children}
     </NavigationContext.Provider>
   )
