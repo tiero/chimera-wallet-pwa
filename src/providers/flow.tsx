@@ -1,7 +1,9 @@
 import { PendingReverseSwap, PendingSubmarineSwap } from '@arkade-os/boltz-swap'
 import { ReactNode, createContext, useState } from 'react'
 import { Tx } from '../lib/types'
+import type { TransferMethod } from '../lib/transferMethods'
 import { ChimeraOrder } from './chimera'
+export type { TransferMethod } from '../lib/transferMethods'
 
 export interface InitInfo {
   password?: string
@@ -29,6 +31,7 @@ export interface RecvInfo {
   boardingAddr: string
   offchainAddr: string
   invoice?: string
+  method?: TransferMethod
   satoshis: number
   txid?: string
 }
@@ -38,6 +41,7 @@ export type SendInfo = {
   arkAddress?: string
   invoice?: string
   lnUrl?: string
+  method?: TransferMethod
   pendingSwap?: PendingSubmarineSwap
   recipient?: string
   satoshis?: number
@@ -87,12 +91,14 @@ export const emptyNoteInfo: NoteInfo = {
 export const emptyRecvInfo: RecvInfo = {
   boardingAddr: '',
   offchainAddr: '',
+  method: 'bitcoin',
   satoshis: 0,
 }
 
 export const emptySendInfo: SendInfo = {
   address: '',
   arkAddress: '',
+  method: 'bitcoin',
   recipient: '',
   satoshis: 0,
   total: 0,

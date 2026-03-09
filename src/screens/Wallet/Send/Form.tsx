@@ -3,7 +3,7 @@ import Button from '../../../components/Button'
 import ErrorMessage from '../../../components/Error'
 import ButtonsOnBottom from '../../../components/ButtonsOnBottom'
 import { NavigationContext, Pages } from '../../../providers/navigation'
-import { FlowContext, SendInfo } from '../../../providers/flow'
+import { FlowContext, SendInfo, TransferMethod } from '../../../providers/flow'
 import Padded from '../../../components/Padded'
 import {
   isArkAddress,
@@ -23,6 +23,7 @@ import Content from '../../../components/Content'
 import FlexCol from '../../../components/FlexCol'
 import Keyboard from '../../../components/Keyboard'
 import Text from '../../../components/Text'
+import Dropdown from '../../../components/Dropdown'
 import Scanner from '../../../components/Scanner'
 import Loading from '../../../components/Loading'
 import { consoleError } from '../../../lib/logs'
@@ -41,6 +42,14 @@ import { LightningContext } from '../../../providers/lightning'
 import { decodeBip21, isBip21 } from '../../../lib/bip21'
 import { FeesContext } from '../../../providers/fees'
 import { InfoLine } from '../../../components/Info'
+import {
+  TRANSFER_METHOD,
+  TRANSFER_METHOD_LABELS,
+  TRANSFER_METHOD_OPTIONS,
+  SEND_METHOD_FEES_TEXT,
+  SEND_METHOD_TIME_TEXT,
+  SEND_METHOD_WARNING_TEXT,
+} from '../../../lib/transferMethods'
 
 export default function SendForm() {
   const { aspInfo } = useContext(AspContext)
@@ -71,6 +80,8 @@ export default function SendForm() {
   const [scan, setScan] = useState(false)
   const [textValue, setTextValue] = useState('')
   const [tryingToSelfSend, setTryingToSelfSend] = useState(false)
+
+  const selectedMethod: TransferMethod = sendInfo.method ?? TRANSFER_METHOD.bitcoin
 
   const smartSetError = (str: string) => {
     setError(str === '' ? (aspInfo.unreachable ? 'Ark server unreachable' : '') : str)
@@ -116,6 +127,7 @@ export default function SendForm() {
     smartSetError('')
     const parseRecipient = async () => {
       setNudgeBoltz(false)
+      if (selectedMethod === TRANSFER_METHOD.bank) return setError('Bank transfers are handled in Transfers')
       if (!recipient) return
       const lowerCaseData = recipient.toLowerCase().replace(/^lightning:/, '')
       if (isURLWithLightningQueryString(recipient)) {
@@ -123,27 +135,56 @@ export default function SendForm() {
         return setRecipient(url.searchParams.get('lightning')!)
       }
       if (isBip21(lowerCaseData)) {
-        const { address, arkAddress, invoice, satoshis } = decodeBip21(lowerCaseData)
+        const { address, arkAddress, invoice, lnurl, satoshis } = decodeBip21(lowerCaseData)
         if (!address && !arkAddress && !invoice) return setError('Unable to parse bip21')
+        if (selectedMethod === TRANSFER_METHOD.bitcoin) {
+          if (!address) return setError('Selected method requires a Bitcoin address')
+          return setState({ ...sendInfo, address, arkAddress: '', invoice: '', lnUrl: undefined, recipient, satoshis })
+        }
+        if (selectedMethod === TRANSFER_METHOD.ark) {
+          if (!arkAddress) return setError('Selected method requires an Ark address')
+          return setState({ ...sendInfo, address: '', arkAddress, invoice: '', lnUrl: undefined, recipient, satoshis })
+        }
+        if (selectedMethod === TRANSFER_METHOD.lightning) {
+          if (!invoice && !lnurl) return setError('Selected method requires a Lightning invoice or LNURL')
+          return setState({
+            ...sendInfo,
+            address: '',
+            arkAddress: '',
+            invoice: invoice ?? '',
+            lnUrl: lnurl,
+            recipient,
+            satoshis,
+          })
+        }
         return setState({ address, arkAddress, invoice, recipient, satoshis })
       }
       if (isArkAddress(lowerCaseData)) {
-        return setState({ ...sendInfo, address: '', arkAddress: lowerCaseData })
+        if (selectedMethod !== TRANSFER_METHOD.ark) {
+          return setError('Selected method requires a different address type')
+        }
+        return setState({ ...sendInfo, address: '', arkAddress: lowerCaseData, invoice: '', lnUrl: undefined })
       }
       if (isLightningInvoice(lowerCaseData)) {
+        if (selectedMethod !== TRANSFER_METHOD.lightning) {
+          return setError('Selected method requires a different address type')
+        }
         if (!connected) {
           setError('Lightning swaps not enabled')
           return setNudgeBoltz(true)
         }
         const satoshis = getInvoiceSatoshis(lowerCaseData)
         if (!satoshis) return setError('Invoice must have amount defined')
-        setState({ ...sendInfo, address: '', arkAddress: '', invoice: lowerCaseData, satoshis })
+        setState({ ...sendInfo, address: '', arkAddress: '', invoice: lowerCaseData, lnUrl: undefined, satoshis })
         setAmountIsReadOnly(true)
         setAmount(satoshis)
         return
       }
       if (isBTCAddress(recipient)) {
-        return setState({ ...sendInfo, address: recipient, arkAddress: '' })
+        if (selectedMethod !== TRANSFER_METHOD.bitcoin) {
+          return setError('Selected method requires a different address type')
+        }
+        return setState({ ...sendInfo, address: recipient, arkAddress: '', invoice: '', lnUrl: undefined })
       }
       if (isArkNote(lowerCaseData)) {
         try {
@@ -155,12 +196,12 @@ export default function SendForm() {
         }
       }
       if (isValidLnUrl(lowerCaseData)) {
-        return setState({ ...sendInfo, lnUrl: lowerCaseData })
+        return setState({ ...sendInfo, address: '', arkAddress: '', invoice: '', lnUrl: lowerCaseData })
       }
       setError('Invalid recipient address')
     }
     parseRecipient()
-  }, [recipient])
+  }, [recipient, selectedMethod])
 
   // check lnurl limits
   useEffect(() => {
@@ -243,6 +284,10 @@ export default function SendForm() {
 
   // manage button label and errors
   useEffect(() => {
+    if (selectedMethod === TRANSFER_METHOD.bank) {
+      setLabel('Use Transfers')
+      return
+    }
     const satoshis = sendInfo.satoshis ?? 0
     setLabel(
       satoshis > availableBalance
@@ -259,7 +304,7 @@ export default function SendForm() {
                   ? 'Amount below min limit'
                   : 'Continue',
     )
-  }, [sendInfo.satoshis, availableBalance])
+  }, [sendInfo.satoshis, availableBalance, selectedMethod])
 
   // manage server unreachable error
   useEffect(() => {
@@ -327,21 +372,30 @@ export default function SendForm() {
   const handleContinue = async () => {
     setProcessing(true)
     try {
+      if (selectedMethod === TRANSFER_METHOD.bank) {
+        handleError('Bank transfers are handled in Transfers')
+        return
+      }
       if (sendInfo.lnUrl) {
-        // Check if Ark method is available
+        if (selectedMethod === TRANSFER_METHOD.bitcoin) {
+          handleError('Selected method does not support LNURL')
+          return
+        }
         const conditions = await checkLnUrlConditions(sendInfo.lnUrl)
         const arkMethod = conditions.transferAmounts?.find((method) => method.method === 'Ark' && method.available)
 
-        if (arkMethod) {
-          // Fetch Ark address instead of Lightning invoice
+        if (selectedMethod === TRANSFER_METHOD.ark) {
+          if (!arkMethod) {
+            handleError('LNURL does not support Ark payments')
+            return
+          }
           const arkResponse = await fetchArkAddress(sendInfo.lnUrl)
           if (!isArkAddress(arkResponse.address)) {
             handleError('Invalid Ark address received from LNURL')
             return
           }
           setState({ ...sendInfo, arkAddress: arkResponse.address, invoice: undefined })
-        } else {
-          // Fallback to Lightning invoice
+        } else if (selectedMethod === TRANSFER_METHOD.lightning) {
           const invoice = await fetchInvoice(sendInfo.lnUrl, sendInfo.satoshis ?? 0, '')
           setState({ ...sendInfo, invoice, arkAddress: undefined })
         }
@@ -396,7 +450,23 @@ export default function SendForm() {
 
   const { address, arkAddress, lnUrl, invoice, satoshis } = sendInfo
 
+  const resolvedMethod = selectedMethod
+
+  const methodFee = (() => {
+    if (!satoshis) return undefined
+    if (resolvedMethod === TRANSFER_METHOD.lightning) return calcSubmarineSwapFee(satoshis)
+    if (resolvedMethod === TRANSFER_METHOD.bitcoin) return calcOnchainOutputFee()
+    if (resolvedMethod === TRANSFER_METHOD.ark) return 0
+    return undefined
+  })()
+
+  const methodFeeText = methodFee !== undefined ? `Estimated fees: ${prettyAmount(methodFee)}` : ''
+  const methodTimeInfo = `Transfer time: ${SEND_METHOD_TIME_TEXT[resolvedMethod]}`
+  const methodFeesInfo = `Fees: ${SEND_METHOD_FEES_TEXT[resolvedMethod]}`
+  const methodWarningInfo = SEND_METHOD_WARNING_TEXT[resolvedMethod]
+
   const buttonDisabled =
+    selectedMethod === TRANSFER_METHOD.bank ||
     !((address || arkAddress || lnUrl || invoice) && satoshis && satoshis > 0) ||
     (lnUrlLimits.max && satoshis > lnUrlLimits.max) ||
     (lnUrlLimits.min && satoshis < lnUrlLimits.min) ||
@@ -426,10 +496,40 @@ export default function SendForm() {
         <Padded>
           <FlexCol gap='2rem'>
             <ErrorMessage error={Boolean(error)} text={error} />
-            <InputAddress
+            <Dropdown
+              label='Transfer method'
+              labels={TRANSFER_METHOD_OPTIONS.map((option) => TRANSFER_METHOD_LABELS[option])}
+              onChange={(value) => {
+                const method = value as TransferMethod
+                setRecipient('')
+                setState({
+                  ...sendInfo,
+                  method,
+                  address: '',
+                  arkAddress: '',
+                  invoice: '',
+                  lnUrl: undefined,
+                  pendingSwap: undefined,
+                  recipient: '',
+                })
+              }}
+              options={TRANSFER_METHOD_OPTIONS}
+              selected={selectedMethod}
+            />
+            {selectedMethod !== TRANSFER_METHOD.bank ? (
+              <InputAddress
               name='send-address'
               focus={focus === 'recipient'}
               label='Recipient address'
+              placeholder={
+                selectedMethod === TRANSFER_METHOD.ark
+                  ? 'Ark address'
+                  : selectedMethod === TRANSFER_METHOD.lightning
+                    ? 'Lightning invoice or LNURL'
+                    : selectedMethod === TRANSFER_METHOD.bitcoin
+                      ? 'Bitcoin address'
+                        : 'Bitcoin address'
+              }
               onChange={handleRecipientChange}
               onEnter={handleEnter}
               openScan={() => {
@@ -437,7 +537,10 @@ export default function SendForm() {
                 setScan(true)
               }}
               value={recipient}
-            />
+              />
+            ) : (
+              <InfoLine color='orange' text='Bank transfers are handled in Transfers' />
+            )}
             <InputAmount
               name='send-amount'
               focus={focus === 'amount' && !isMobileBrowser}
@@ -453,6 +556,10 @@ export default function SendForm() {
               sats={amount}
               value={textValue ? Number(textValue) : undefined}
             />
+            {methodWarningInfo ? <InfoLine color='orange' text={methodWarningInfo} /> : null}
+            {methodFeeText ? <InfoLine color='orange' text={methodFeeText} /> : null}
+            {methodTimeInfo ? <InfoLine text={methodTimeInfo} /> : null}
+            {methodFeesInfo ? <InfoLine text={methodFeesInfo} /> : null}
             {deductFromAmount ? <InfoLine color='orange' text='Fees will be deducted from the amount sent' /> : null}
             {tryingToSelfSend ? (
               <div style={{ width: '100%' }}>

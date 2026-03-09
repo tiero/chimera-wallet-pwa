@@ -19,6 +19,7 @@ import Loading from '../../../components/Loading'
 import { LightningContext } from '../../../providers/lightning'
 import { encodeBip21 } from '../../../lib/bip21'
 import { InfoLine } from '../../../components/Info'
+import { TRANSFER_METHOD } from '../../../lib/transferMethods'
 
 export default function ReceiveQRCode() {
   const { navigate } = useContext(NavigationContext)
@@ -32,9 +33,15 @@ export default function ReceiveQRCode() {
 
   // manage all possible receive methods
   const { boardingAddr, offchainAddr, satoshis } = recvInfo
-  const address = validUtxoTx(satoshis) && utxoTxsAllowed() ? boardingAddr : ''
-  const arkAddress = validVtxoTx(satoshis) && vtxoTxsAllowed() ? offchainAddr : ''
-  const noPaymentMethods = !address && !arkAddress && !validLnSwap(satoshis)
+  const selectedMethod = recvInfo.method ?? TRANSFER_METHOD.bitcoin
+  const allowUtxo = validUtxoTx(satoshis) && utxoTxsAllowed()
+  const allowVtxo = validVtxoTx(satoshis) && vtxoTxsAllowed()
+  const allowLn = validLnSwap(satoshis)
+
+  const address = selectedMethod === TRANSFER_METHOD.bitcoin ? (allowUtxo ? boardingAddr : '') : ''
+  const arkAddress = selectedMethod === TRANSFER_METHOD.ark ? (allowVtxo ? offchainAddr : '') : ''
+  const useLightning = selectedMethod === TRANSFER_METHOD.lightning ? allowLn : false
+  const noPaymentMethods = !address && !arkAddress && !useLightning
   const defaultBip21uri = encodeBip21(address, arkAddress, '', satoshis)
 
   const [invoice, setInvoice] = useState(recvInfo.invoice ?? '')
@@ -57,7 +64,7 @@ export default function ReceiveQRCode() {
       return
     }
 
-    if (validLnSwap(satoshis) && wallet && svcWallet && arkadeLightning) {
+    if (useLightning && wallet && svcWallet && arkadeLightning) {
       createReverseSwap(satoshis)
         .then((pendingSwap) => {
           if (!pendingSwap) throw new Error('Failed to create reverse swap')
@@ -83,7 +90,7 @@ export default function ReceiveQRCode() {
     } else {
       setShowQrCode(true)
     }
-  }, [satoshis, arkadeLightning, invoice])
+  }, [satoshis, arkadeLightning, invoice, useLightning])
 
   useEffect(() => {
     if (!svcWallet) return
