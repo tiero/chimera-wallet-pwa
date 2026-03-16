@@ -226,21 +226,21 @@ ion-tab-bar {
   border-top: 1px solid var(--dark20);
   width: 100%;
   & ion-tab-button {
-    --color: #fbfbfb;
-    --color-selected: #fbfbfb;
+    --color: var(--grey);
+    --color-selected: var(--green);
     max-width: none;
     &:hover,
     &:hover svg,
     &.tab-selected,
     &.tab-selected svg {
-      color: #fbfbfb;
+      color: var(--green);
     }
     & .focusable:focus {
       background-color: transparent;
     }
   }
   & svg {
-    color: rgba(251, 251, 251, 0.6);
+    color: var(--grey);
   }
 }
 

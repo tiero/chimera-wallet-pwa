@@ -33,6 +33,8 @@ import { pwaIsInstalled } from './lib/pwa'
 import FlexCol from './components/FlexCol'
 import WalletIcon from './icons/Wallet'
 import AppsIcon from './icons/Apps'
+import CardReservationIcon from './icons/CardReservation'
+import SwapIcon from './icons/Swap'
 import Focusable from './components/Focusable'
 import { useReducedMotion } from './hooks/useReducedMotion'
 
@@ -91,8 +93,10 @@ export default function App() {
   const [animatingTab, setAnimatingTab] = useState<string | null>(null)
 
   // refs for the tabs to be able to programmatically activate them
-  const appsRef = useRef<HTMLIonTabElement>(null)
+  const cardRef = useRef<HTMLIonTabElement>(null)
+  const tradeRef = useRef<HTMLIonTabElement>(null)
   const walletRef = useRef<HTMLIonTabElement>(null)
+  const appsRef = useRef<HTMLIonTabElement>(null)
   const settingsRef = useRef<HTMLIonTabElement>(null)
 
   // lock screen orientation to portrait
@@ -135,21 +139,43 @@ export default function App() {
   // if you are coming from a page in a different tab
   useEffect(() => {
     switch (tab) {
+      case Tabs.Card:
+        cardRef.current?.setActive()
+        cardRef.current?.classList.remove('tab-hidden')
+        tradeRef.current?.classList.add('tab-hidden')
+        walletRef.current?.classList.add('tab-hidden')
+        appsRef.current?.classList.add('tab-hidden')
+        settingsRef.current?.classList.add('tab-hidden')
+        break
+      case Tabs.Trade:
+        tradeRef.current?.setActive()
+        tradeRef.current?.classList.remove('tab-hidden')
+        cardRef.current?.classList.add('tab-hidden')
+        walletRef.current?.classList.add('tab-hidden')
+        appsRef.current?.classList.add('tab-hidden')
+        settingsRef.current?.classList.add('tab-hidden')
+        break
       case Tabs.Wallet:
         walletRef.current?.setActive()
         walletRef.current?.classList.remove('tab-hidden')
+        cardRef.current?.classList.add('tab-hidden')
+        tradeRef.current?.classList.add('tab-hidden')
         appsRef.current?.classList.add('tab-hidden')
         settingsRef.current?.classList.add('tab-hidden')
         break
       case Tabs.Apps:
         appsRef.current?.setActive()
         appsRef.current?.classList.remove('tab-hidden')
+        cardRef.current?.classList.add('tab-hidden')
+        tradeRef.current?.classList.add('tab-hidden')
         walletRef.current?.classList.add('tab-hidden')
         settingsRef.current?.classList.add('tab-hidden')
         break
       case Tabs.Settings:
         settingsRef.current?.setActive()
         settingsRef.current?.classList.remove('tab-hidden')
+        cardRef.current?.classList.add('tab-hidden')
+        tradeRef.current?.classList.add('tab-hidden')
         walletRef.current?.classList.add('tab-hidden')
         appsRef.current?.classList.add('tab-hidden')
         break
@@ -162,6 +188,18 @@ export default function App() {
     setAnimatingTab(null)
     requestAnimationFrame(() => setAnimatingTab(tabName))
   }, [])
+
+  const handleCard = () => {
+    triggerTabAnim('card')
+    hapticLight()
+    navigate(Pages.AppCardReservation)
+  }
+
+  const handleTrade = () => {
+    triggerTabAnim('trade')
+    hapticLight()
+    navigate(Pages.AppSwap)
+  }
 
   const handleWallet = () => {
     triggerTabAnim('wallet')
@@ -203,6 +241,28 @@ export default function App() {
           </div>
         ) : (
           <IonTabs>
+            <IonTab ref={cardRef} tab={Tabs.Card}>
+              <div className='page-transition-container'>
+                <PageAnimWrapper animated={!prefersReduced} direction={effectiveDirection}>
+                  {tab === Tabs.Card && (
+                    <PageTransition key={String(page)} direction={direction} pageKey={String(page)}>
+                      {comp}
+                    </PageTransition>
+                  )}
+                </PageAnimWrapper>
+              </div>
+            </IonTab>
+            <IonTab ref={tradeRef} tab={Tabs.Trade}>
+              <div className='page-transition-container'>
+                <PageAnimWrapper animated={!prefersReduced} direction={effectiveDirection}>
+                  {tab === Tabs.Trade && (
+                    <PageTransition key={String(page)} direction={direction} pageKey={String(page)}>
+                      {comp}
+                    </PageTransition>
+                  )}
+                </PageAnimWrapper>
+              </div>
+            </IonTab>
             <IonTab ref={walletRef} tab={Tabs.Wallet}>
               <div className='page-transition-container'>
                 <PageAnimWrapper animated={!prefersReduced} direction={effectiveDirection}>
@@ -237,13 +297,53 @@ export default function App() {
               </div>
             </IonTab>
             <IonTabBar slot='bottom'>
+              <IonTabButton tab={Tabs.Card} onClick={handleCard} selected={tab === Tabs.Card}>
+                <Focusable>
+                  <FlexCol centered gap='6px' padding='5px' testId='tab-card'>
+                    <AnimatedTabIcon animating={animatingTab === 'card'}>
+                      <CardReservationIcon />
+                    </AnimatedTabIcon>
+                    Card
+                  </FlexCol>
+                </Focusable>
+              </IonTabButton>
+              <IonTabButton tab={Tabs.Trade} onClick={handleTrade} selected={tab === Tabs.Trade}>
+                <Focusable>
+                  <FlexCol centered gap='6px' padding='5px' testId='tab-trade'>
+                    <AnimatedTabIcon animating={animatingTab === 'trade'}>
+                      <SwapIcon />
+                    </AnimatedTabIcon>
+                    Trade
+                  </FlexCol>
+                </Focusable>
+              </IonTabButton>
               <IonTabButton tab={Tabs.Wallet} onClick={handleWallet} selected={tab === Tabs.Wallet}>
                 <Focusable>
                   <FlexCol centered gap='6px' padding='5px' testId='tab-wallet'>
-                    <AnimatedTabIcon animating={animatingTab === 'wallet'}>
-                      <WalletIcon />
-                    </AnimatedTabIcon>
-                    Wallet
+                    <div
+                      style={{
+                        width: '56px',
+                        height: '56px',
+                        borderRadius: '50%',
+                        overflow: 'hidden',
+                        border: '3px solid var(--ion-tabbar-background-color)',
+                        backgroundColor: 'var(--ion-tabbar-background-color)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <img
+                        src='/arkade-icon.svg'
+                        alt='Wallet'
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          opacity: tab === Tabs.Wallet ? 1 : 0.5,
+                          transition: 'opacity 0.2s ease',
+                        }}
+                      />
+                    </div>
                   </FlexCol>
                 </Focusable>
               </IonTabButton>

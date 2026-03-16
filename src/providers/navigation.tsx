@@ -83,8 +83,10 @@ export enum Pages {
 
 export enum Tabs {
   Apps = 'apps',
+  Card = 'card',
   None = 'none',
   Settings = 'settings',
+  Trade = 'trade',
   Wallet = 'wallet',
 }
 
@@ -97,9 +99,9 @@ const pageTab = {
   [Pages.AppStatement]: Tabs.Apps,
   [Pages.AppReferral]: Tabs.Apps,
   [Pages.AppGiftCards]: Tabs.Apps,
-  [Pages.AppCardReservation]: Tabs.Apps,
-  [Pages.AppSwap]: Tabs.Apps,
-  [Pages.AppSwapOrderDetails]: Tabs.Apps,
+  [Pages.AppCardReservation]: Tabs.Card,
+  [Pages.AppSwap]: Tabs.Trade,
+  [Pages.AppSwapOrderDetails]: Tabs.Trade,
   [Pages.AppAddressBook]: Tabs.Apps,
   [Pages.AppAddressBookForm]: Tabs.Apps,
   [Pages.AppAddressBookContact]: Tabs.Apps,
@@ -130,7 +132,7 @@ const pageTab = {
 }
 
 // Root pages of each tab — tab switches between these get no animation
-const ROOT_PAGES = new Set([Pages.Wallet, Pages.Apps, Pages.Settings])
+const ROOT_PAGES = new Set([Pages.AppCardReservation, Pages.AppSwap, Pages.Wallet, Pages.Apps, Pages.Settings])
 
 export const pageComponent = (page: Pages): JSX.Element => {
   switch (page) {
