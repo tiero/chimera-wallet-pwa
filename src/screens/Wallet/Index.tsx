@@ -68,8 +68,8 @@ export default function Wallet() {
                 </WalletStaggerChild>
                 <WalletStaggerChild animate={shouldStagger}>
                   <FlexRow padding='0 0 0.5rem 0'>
-                    <Button main icon={<SendIcon />} label='Send' onClick={handleSend} />
-                    <Button main icon={<ReceiveIcon />} label='Receive' onClick={handleReceive} />
+                    <Button main icon={<SendIcon />} iconPosition='right' label='Send' onClick={handleSend} />
+                    <Button main icon={<ReceiveIcon />} iconPosition='right' label='Receive' onClick={handleReceive} />
                   </FlexRow>
                 </WalletStaggerChild>
                 <WalletStaggerChild animate={shouldStagger}>

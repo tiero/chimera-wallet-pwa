@@ -9,6 +9,7 @@ interface ButtonProps {
   disabled?: boolean
   fancy?: boolean
   icon?: ReactElement
+  iconPosition?: 'left' | 'right'
   label: string
   loading?: boolean
   main?: boolean
@@ -23,6 +24,7 @@ export default function Button({
   disabled,
   fancy,
   icon,
+  iconPosition = 'left',
   label,
   loading,
   main,
@@ -78,6 +80,11 @@ export default function Button({
             <Label label={label} />
           </FlexRow>
           <ArrowIcon />
+        </FlexRow>
+      ) : iconPosition === 'right' ? (
+        <FlexRow main={main} between>
+          <Label label={label} />
+          {icon}
         </FlexRow>
       ) : (
         <FlexRow main={main} centered>

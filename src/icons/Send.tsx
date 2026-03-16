@@ -1,12 +1,11 @@
 export default function SendIcon() {
   return (
-    <svg width='13' height='14' viewBox='0 0 13 14' fill='none' xmlns='http://www.w3.org/2000/svg'>
-      <rect y='0.499878' width='4.33332' height='4.33332' fill='#F2F2F2' />
-      <rect x='4.33398' y='0.499878' width='4.33332' height='4.33332' fill='#F2F2F2' />
-      <rect x='8.66602' y='0.499878' width='4.33332' height='4.33332' fill='#F2F2F2' />
-      <rect x='8.66602' y='4.83301' width='4.33332' height='4.33332' fill='#F2F2F2' />
-      <rect x='8.66602' y='9.16675' width='4.33332' height='4.33332' fill='#F2F2F2' />
-      <rect y='9.16675' width='4.33332' height='4.33332' fill='#F2F2F2' />
+    <svg width='16' height='20' viewBox='0 0 16 20' fill='none' xmlns='http://www.w3.org/2000/svg'>
+      {/* Arrow pointing up */}
+      <path d='M8 4L8 14' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' />
+      <path d='M4 8L8 4L12 8' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' strokeLinejoin='round' />
+      {/* Line underneath */}
+      <line x1='2' y1='18' x2='14' y2='18' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' />
     </svg>
   )
 }
