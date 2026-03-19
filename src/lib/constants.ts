@@ -1,8 +1,8 @@
 export const arknoteHRP = 'arknote'
 export const defaultFee = 0
 export const testDomains = ['dev.arkade.money', 'next.arkade.money', 'pages.dev', 'localhost']
-export const devServer = 'https://arkade.computer'
-export const testServer = 'https://arkade.computer'
+export const devServer = 'https://mutinynet.arkade.sh'
+export const testServer = 'https://mutinynet.arkade.sh'
 export const mainServer = 'https://arkade.computer'
 export const defaultPassword = 'noah'
 export const minSatsToNudge = 100_000
