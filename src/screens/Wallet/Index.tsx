@@ -85,7 +85,7 @@ export default function Wallet() {
                 <Button main icon={<SendIcon />} iconPosition='right' label='Send' onClick={handleSend} />
                 <Button main icon={<ReceiveIcon />} iconPosition='right' label='Receive' onClick={handleReceive} />
               </FlexRow>
-              <TransactionsList filterAsset={selectedAsset} />
+              <TransactionsList filterAsset={selectedAsset} maxItems={4} />
             </FlexCol>
           </Padded>
         </Content>
@@ -126,7 +126,7 @@ export default function Wallet() {
                 </WalletStaggerChild>
               ) : (
                 <WalletStaggerChild animate={shouldStagger}>
-                  <TransactionsList />
+                  <TransactionsList maxItems={4} />
                 </WalletStaggerChild>
               )}
               <WalletStaggerChild animate={shouldStagger}>

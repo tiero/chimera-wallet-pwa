@@ -1,21 +1,15 @@
 import { useContext, useState } from 'react'
 import { WalletContext } from '../providers/wallet'
-import Text, { TextLabel, TextSecondary } from './Text'
-import { CurrencyDisplay, Tx } from '../lib/types'
-import { prettyAmount, prettyDate, prettyHide } from '../lib/format'
-import ReceivedIcon from '../icons/Received'
-import SentIcon from '../icons/Sent'
-import FlexRow from './FlexRow'
+import Text, { TextLabel } from './Text'
+import { Tx } from '../lib/types'
+import { prettyDate, prettyHide } from '../lib/format'
 import { FlowContext } from '../providers/flow'
 import { NavigationContext, Pages } from '../providers/navigation'
 import { ConfigContext } from '../providers/config'
 import { FiatContext } from '../providers/fiat'
-import PreconfirmedIcon from '../icons/Preconfirmed'
 import Focusable from './Focusable'
 import { hapticSubtle } from '../lib/haptics'
 import { ASSETS, type AssetSymbol } from '../lib/assets'
-
-const border = '1px solid var(--dark20)'
 
 const TransactionLine = ({ tx, onClick }: { tx: Tx; onClick: () => void }) => {
   const { config } = useContext(ConfigContext)
@@ -25,90 +19,90 @@ const TransactionLine = ({ tx, onClick }: { tx: Tx; onClick: () => void }) => {
   const btcAmount = tx.amount / Math.pow(10, ASSETS.BTC.precision)
 
   const prefix = tx.type === 'sent' ? '-' : '+'
-  const amount = `${prefix} ${config.showBalance ? prettyAmount(btcAmount, ASSETS.BTC.symbol) : prettyHide(btcAmount, ASSETS.BTC.symbol)}`
-  const date = tx.createdAt ? prettyDate(tx.createdAt) : tx.boardingTxid ? 'Unconfirmed' : 'Unknown'
+  
+  // Format BTC amount with up to 5 decimal places
+  const formattedBTC = config.showBalance 
+    ? `${prefix} ${btcAmount.toFixed(5)} ${ASSETS.BTC.symbol}`
+    : prettyHide(btcAmount, ASSETS.BTC.symbol)
+  
+  // Format USD amount
+  const usdAmount = toFiat(tx.amount)
+  const formattedUSD = config.showBalance 
+    ? `${prefix} $${usdAmount.toFixed(2)}`
+    : prettyHide(usdAmount, config.fiat)
 
-  const Fiat = () => {
-    const color =
-      config.currencyDisplay === CurrencyDisplay.Both
-        ? 'dark50'
-        : tx.type === 'received'
-          ? 'green'
-          : tx.boardingTxid && tx.preconfirmed
-            ? 'orange'
-            : ''
-    const value = toFiat(tx.amount)
-    const small = config.currencyDisplay === CurrencyDisplay.Both
-    const world = config.showBalance ? prettyAmount(value, config.fiat) : prettyHide(value, config.fiat)
-    return (
-      <Text color={color} small={small}>
-        {world}
-      </Text>
-    )
+  // Get status
+  const getStatus = () => {
+    if (tx.settled) return { text: 'Confirmed', color: 'var(--green-positive)' }
+    if (tx.preconfirmed) return { text: 'Pending', color: 'var(--orange)' }
+    if (tx.boardingTxid) return { text: 'Processing', color: 'var(--yellow)' }
+    return { text: 'Unknown', color: 'var(--grey)' }
   }
 
-  const Icon = () =>
-    tx.type === 'sent' ? (
-      <SentIcon />
-    ) : tx.preconfirmed && tx.boardingTxid ? (
-      <PreconfirmedIcon />
-    ) : (
-      <ReceivedIcon dotted={tx.preconfirmed} />
-    )
+  const status = getStatus()
+  const date = tx.createdAt ? prettyDate(tx.createdAt) : 'Unknown date'
+  const action = tx.type === 'sent' ? `Sent ${ASSETS.BTC.symbol}` : `Received ${ASSETS.BTC.symbol}`
 
-  const Kind = () => <Text thin>{tx.type === 'sent' ? 'Sent' : 'Received'}</Text>
-
-  const When = () => <TextSecondary>{date}</TextSecondary>
-
-  const Crypto = () => (
-    <Text color={tx.type === 'received' ? (tx.preconfirmed && tx.boardingTxid ? 'orange' : 'green') : ''} thin>
-      {amount}
-    </Text>
-  )
-
-  const rowStyle = {
-    alignItems: 'center',
-    borderTop: border,
-    cursor: 'pointer',
-    padding: '0.5rem 1rem',
-  }
-
-  const Left = () => (
-    <FlexRow>
-      <Icon />
-      <div>
-        <Kind />
-        <When />
-      </div>
-    </FlexRow>
-  )
-
-  const Right = () => (
-    <div style={{ textAlign: 'right' }}>
-      {config.currencyDisplay === CurrencyDisplay.Fiat ? (
-        <Fiat />
-      ) : config.currencyDisplay === CurrencyDisplay.Sats ? (
-        <Crypto />
-      ) : (
-        <>
-          <Crypto />
-          <Fiat />
-        </>
-      )}
-    </div>
-  )
+  const iconSrc = tx.type === 'sent' ? '/images/icons/sent.svg' : '/images/icons/received.svg'
+  const iconAlt = tx.type === 'sent' ? 'Sent' : 'Received'
 
   return (
-    <div style={rowStyle} onClick={onClick}>
-      <FlexRow>
-        <Left />
-        <Right />
-      </FlexRow>
+    <div
+      onClick={onClick}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        padding: '12px 16px',
+        cursor: 'pointer',
+        borderBottom: '1px solid var(--dark10)',
+        transition: 'background 0.15s ease',
+        width: '100%',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = 'var(--white03)'
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = 'transparent'
+      }}
+    >
+      {/* Left Section - Icon */}
+      <div style={{ marginRight: '12px' }}>
+        <img 
+          src={iconSrc} 
+          alt={iconAlt}
+          width={24}
+          height={24}
+          style={{ display: 'block' }}
+        />
+      </div>
+
+      {/* Middle Section - Date, Action, Status */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <div style={{ fontSize: '11px', color: 'var(--grey)', fontWeight: 400 }}>
+          {date}
+        </div>
+        <div style={{ fontSize: '14px', color: 'white', fontWeight: 500 }}>
+          {action}
+        </div>
+        <div style={{ fontSize: '12px', color: status.color, fontWeight: 500 }}>
+          {status.text}
+        </div>
+      </div>
+
+      {/* Right Section - Amount */}
+      <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <div style={{ fontSize: '14px', color: 'white', fontWeight: 500, fontFamily: 'monospace' }}>
+          {formattedBTC}
+        </div>
+        <div style={{ fontSize: '12px', color: 'var(--grey)', fontWeight: 400 }}>
+          {formattedUSD}
+        </div>
+      </div>
     </div>
   )
 }
 
-export default function TransactionsList({ filterAsset }: { filterAsset?: AssetSymbol | string }) {
+export default function TransactionsList({ filterAsset, maxItems }: { filterAsset?: AssetSymbol | string; maxItems?: number }) {
   const { setTxInfo } = useContext(FlowContext)
   const { navigate } = useContext(NavigationContext)
   const { txs } = useContext(WalletContext)
@@ -119,19 +113,23 @@ export default function TransactionsList({ filterAsset }: { filterAsset?: AssetS
   // Note: Currently all transactions are BTC. When multi-asset support is added,
   // the Tx type should include an 'asset' field for filtering.
   const filteredTxs = filterAsset
-    ? txs.filter((tx) => {
+    ? txs.filter(() => {
         // For now, assume all transactions are BTC
         // In future: return tx.asset === filterAsset
         return filterAsset === ASSETS.BTC.symbol
       })
     : txs
 
+  // Limit to maxItems if specified
+  const displayTxs = maxItems ? filteredTxs.slice(0, maxItems) : filteredTxs
+  const hasMore = maxItems && filteredTxs.length > maxItems
+
   const key = (tx: Tx, index: number) => tx.roundTxid || tx.redeemTxid || tx.boardingTxid || `tx-${index}`
 
   const focusOnFirstRow = () => {
     setFocused(true)
-    if (filteredTxs.length === 0) return
-    const id = key(filteredTxs[0], 0)
+    if (displayTxs.length === 0) return
+    const id = key(displayTxs[0], 0)
     const first = document.getElementById(id) as HTMLElement
     if (first) first.focus()
   }
@@ -153,28 +151,72 @@ export default function TransactionsList({ filterAsset }: { filterAsset?: AssetS
     navigate(Pages.Transaction)
   }
 
+  const handleViewAll = () => {
+    hapticSubtle()
+    // TODO: Navigate to full transactions page if needed
+    // For now, we can just scroll or show all transactions
+  }
+
   return (
-    <div style={{ width: 'calc(100% + 2rem)', margin: '0 -1rem' }}>
-      <TextLabel>{filterAsset ? `${filterAsset} transactions` : 'Transaction history'}</TextLabel>
-      <Focusable id='outer' onEnter={focusOnFirstRow} ariaLabel={ariaLabel()}>
-        <div style={{ borderBottom: border }}>
-          {filteredTxs.map((tx, index) => {
-            const k = key(tx, index)
-            return (
-              <Focusable
-                id={k}
-                key={k}
-                inactive={!focused}
-                onEnter={() => handleClick(tx)}
-                onEscape={focusOnOuterShell}
-                ariaLabel={ariaLabel(tx)}
-              >
-                <TransactionLine onClick={() => handleClick(tx)} tx={tx} />
-              </Focusable>
-            )
-          })}
-        </div>
-      </Focusable>
+    <div style={{ marginTop: '1.5rem', width: '100%' }}>
+      <div style={{ marginBottom: '8px' }}>
+        <TextLabel>
+          {filterAsset ? `${filterAsset} transactions` : 'Recent Transactions'}
+        </TextLabel>
+      </div>
+      <div
+        style={{
+          border: '1px solid var(--grey)',
+          borderRadius: 'var(--info-container-radius)',
+          overflow: 'hidden',
+          backgroundColor: 'transparent',
+          width: '100%',
+        }}
+      >
+        <Focusable id='outer' onEnter={focusOnFirstRow} ariaLabel={ariaLabel()}>
+          <div style={{ width: '100%' }}>
+            {displayTxs.map((tx, index) => {
+              const k = key(tx, index)
+              return (
+                <Focusable
+                  id={k}
+                  key={k}
+                  inactive={!focused}
+                  onEnter={() => handleClick(tx)}
+                  onEscape={focusOnOuterShell}
+                  ariaLabel={ariaLabel(tx)}
+                >
+                  <TransactionLine onClick={() => handleClick(tx)} tx={tx} />
+                </Focusable>
+              )
+            })}
+          </div>
+        </Focusable>
+        
+        {hasMore ? (
+          <div
+            onClick={handleViewAll}
+            style={{
+              padding: '12px 16px',
+              textAlign: 'center',
+              cursor: 'pointer',
+              borderTop: '1px solid var(--dark10)',
+              transition: 'background 0.15s ease',
+              width: '100%',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--white03)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent'
+            }}
+          >
+            <Text color='blue-primary' thin>
+              View all transactions
+            </Text>
+          </div>
+        ) : null}
+      </div>
     </div>
   )
 }
