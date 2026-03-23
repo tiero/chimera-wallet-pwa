@@ -298,7 +298,7 @@ export default function App() {
             </IonTab>
             <IonTabBar slot='bottom'>
               <IonTabButton tab={Tabs.Card} onClick={handleCard} selected={tab === Tabs.Card}>
-                <Focusable>
+                <Focusable fit>
                   <FlexCol centered gap='6px' padding='5px' testId='tab-card'>
                     <AnimatedTabIcon animating={animatingTab === 'card'}>
                       <CardReservationIcon />
@@ -308,7 +308,7 @@ export default function App() {
                 </Focusable>
               </IonTabButton>
               <IonTabButton tab={Tabs.Trade} onClick={handleTrade} selected={tab === Tabs.Trade}>
-                <Focusable>
+                <Focusable fit>
                   <FlexCol centered gap='6px' padding='5px' testId='tab-trade'>
                     <AnimatedTabIcon animating={animatingTab === 'trade'}>
                       <SwapIcon />
@@ -318,7 +318,7 @@ export default function App() {
                 </Focusable>
               </IonTabButton>
               <IonTabButton tab={Tabs.Wallet} onClick={handleWallet} selected={tab === Tabs.Wallet}>
-                <Focusable>
+                <Focusable fit>
                   <FlexCol centered gap='6px' padding='5px' testId='tab-wallet'>
                     <div
                       style={{
@@ -348,7 +348,7 @@ export default function App() {
                 </Focusable>
               </IonTabButton>
               <IonTabButton tab={Tabs.Apps} onClick={handleApps} selected={tab === Tabs.Apps}>
-                <Focusable>
+                <Focusable fit>
                   <FlexCol centered gap='6px' padding='5px' testId='tab-apps'>
                     <AnimatedTabIcon animating={animatingTab === 'apps'}>
                       <AppsIcon />
@@ -358,7 +358,7 @@ export default function App() {
                 </Focusable>
               </IonTabButton>
               <IonTabButton tab={Tabs.Settings} onClick={handleSettings} selected={tab === Tabs.Settings}>
-                <Focusable>
+                <Focusable fit>
                   <FlexCol centered gap='6px' padding='5px' testId='tab-settings'>
                     <AnimatedTabIcon animating={animatingTab === 'settings'}>
                       <SettingsIcon />

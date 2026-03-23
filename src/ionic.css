@@ -247,6 +247,7 @@ ion-tab-bar {
   /* Handle iOS safe area */
   padding-bottom: env(safe-area-inset-bottom);
   & ion-tab-button {
+    --background: var(--ion-tabbar-background-color);
     --color: var(--grey);
     --color-selected: var(--green);
     max-width: none;

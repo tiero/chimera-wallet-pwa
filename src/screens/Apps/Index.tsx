@@ -1,14 +1,11 @@
 import { useContext } from 'react'
 import Content from '../../components/Content'
-import FlexRow from '../../components/FlexRow'
 import Padded from '../../components/Padded'
 import Header from '../../components/Header'
-import FlexCol from '../../components/FlexCol'
 import Text from '../../components/Text'
 import Shadow from '../../components/Shadow'
 import { NavigationContext, Pages } from '../../providers/navigation'
 import Focusable from '../../components/Focusable'
-import BoltzIcon from '../../icons/Boltz'
 import FujiMoneyIcon from '../../icons/FujiMoney'
 import LendasatIcon from './Lendasat/LendasatIcon'
 import LendaswapIcon from './Lendaswap/LendaswapIcon'
@@ -16,48 +13,16 @@ import SwapIcon from '../../icons/Swap'
 import AddressBookIcon from '../../icons/AddressBook'
 import { hapticSubtle } from '../../lib/haptics'
 
-const Middot = () => (
-  <svg width='6' height='6' viewBox='0 0 6 6' fill='none' xmlns='http://www.w3.org/2000/svg' aria-hidden='true'>
-    <circle cx='3' cy='3' r='3' fill='white' />
-  </svg>
-)
-
-const Tag = ({ kind }: { kind: 'new' | 'coming soon' }) => {
-  const style: React.CSSProperties = {
-    borderRadius: '4px',
-    background: kind === 'coming soon' ? 'rgba(96, 177, 138, 0.10)' : 'var(--blue-primary, rgba(57, 25, 152, 1))',
-    color: kind === 'coming soon' ? 'var(--green)' : 'var(--white)',
-    fontFamily: 'Geist Mono',
-    fontSize: '12px',
-    fontStyle: 'normal',
-    fontWeight: 400,
-    lineHeight: '150%',
-    width: 'fit-content',
-    padding: '2px 8px',
-    textAlign: 'right' as const,
-    textTransform: 'uppercase' as const,
-  }
-  return (
-    <div style={style}>
-      <FlexRow centered gap='0.25rem'>
-        {kind === 'new' ? <Middot /> : ''}
-        <p>{kind.replace(' ', '\u00A0')}</p>
-      </FlexRow>
-    </div>
-  )
-}
-
 interface AppProps {
-  desc: string
   icon?: React.ReactElement
   image?: string
   name: string
-  live?: boolean
   link?: string
   page?: Pages
+  backgroundImage?: string
 }
 
-function App({ desc, icon, image, link, name, live, page }: AppProps) {
+function App({ icon, image, link, name, page, backgroundImage }: AppProps) {
   const { navigate } = useContext(NavigationContext)
 
   const handleClick = () => {
@@ -68,36 +33,58 @@ function App({ desc, icon, image, link, name, live, page }: AppProps) {
 
   const testId = `app-${name.toLowerCase().replace(/\s+/g, '-')}`
 
+  const cardStyle: React.CSSProperties = {
+    position: 'relative',
+    minHeight: '100px',
+    backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+  }
+
+  const overlayStyle: React.CSSProperties = {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: backgroundImage ? 'rgba(0, 0, 0, 0.3)' : 'transparent',
+    borderRadius: '0.5rem',
+  }
+
+  const contentStyle: React.CSSProperties = {
+    position: 'relative',
+    zIndex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: '100px',
+  }
+
   return (
     <Focusable onEnter={handleClick}>
-      <Shadow border borderPurple={live} onClick={handleClick}>
-        <FlexCol gap='0.75rem' padding='0.5rem' testId={testId}>
-          <FlexRow between>
+      <Shadow border onClick={handleClick}>
+        <div style={cardStyle}>
+          {backgroundImage ? <div style={overlayStyle} /> : null}
+          <div style={contentStyle} data-testid={testId}>
+            {/* Icon centered */}
             {image ? (
               <img
                 src={image}
                 alt={`${name} icon`}
-                style={{ width: 55, height: 55, borderRadius: 8, objectFit: 'contain' }}
+                style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'contain' }}
               />
             ) : (
-              <div style={{ width: 55, height: 55, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', transform: 'scale(0.7)' }}>
                 {icon}
               </div>
             )}
-            <FlexCol gap='0.25rem'>
-              <FlexRow between>
-                <Text bold>{name}</Text>
-                <Tag kind={live ? 'new' : 'coming soon'} />
-              </FlexRow>
-              <Text small thin wrap>
-                {link}
-              </Text>
-            </FlexCol>
-          </FlexRow>
-          <Text small thin wrap>
-            {desc}
-          </Text>
-        </FlexCol>
+            
+            {/* Title */}
+            <Text bold centered>{name}</Text>
+          </div>
+        </div>
       </Shadow>
     </Focusable>
   )
@@ -109,53 +96,51 @@ export default function Apps() {
       <Header text='Apps' />
       <Content>
         <Padded>
-          <FlexCol>
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(2, 1fr)', 
+            width: '100%'
+          }}>
             <App
               name='Swap'
               icon={<SwapIcon big />}
-              desc='Swap fiat or crypto to Bitcoin'
               page={Pages.AppSwap}
-              live
+              backgroundImage='/images/apps_backgrounds/transfer.png'
             />
 
             <App
               name='Address Book'
               icon={<AddressBookIcon big />}
-              desc='Save and manage your addresses and contacts'
               page={Pages.AppAddressBook}
-              live
+              backgroundImage='/images/apps_backgrounds/address_book.png'
             />
 
             <App
               name='Statement'
               image='/images/apps/Statement.png'
-              desc='View your transaction history and account statements'
               page={Pages.AppStatement}
-              live
+              backgroundImage='/images/apps_backgrounds/statements.png'
             />
 
             <App
               name='Referral'
               image='/images/apps/Referral.png'
-              desc='Invite friends and earn rewards'
               page={Pages.AppReferral}
-              live
+              backgroundImage='/images/apps_backgrounds/referral.png'
             />
 
             <App
               name='Gift Cards'
               image='/images/apps/Card.png'
-              desc='Buy and redeem gift cards with Bitcoin'
               page={Pages.AppGiftCards}
-              live
+              backgroundImage='/images/apps_backgrounds/gift_cards.png'
             />
 
             <App
               name='Card Reservation'
               image='/images/apps/Card.png'
-              desc='Reserve your Chimera debit card'
               page={Pages.AppCardReservation}
-              live
+              backgroundImage='/images/apps_backgrounds/card_reservation.png'
             />
 {/* 
             <App
@@ -170,22 +155,24 @@ export default function Apps() {
             <App
               name='LendaSat'
               icon={<LendasatIcon />}
-              desc='Borrow against your sats'
               link='https://lendasat.com'
               page={Pages.AppLendasat}
-              live
+              backgroundImage='/images/apps_backgrounds/transfer.png'
             />
 
             <App
               name='LendaSwap'
               icon={<LendaswapIcon />}
-              desc='Swap Bitcoin to USDC instantly'
               link='https://swap.lendasat.com'
               page={Pages.AppLendaswap}
-              live
+              backgroundImage='/images/apps_backgrounds/transfer.png'
             />
-            <App name='Fuji Money' icon={<FujiMoneyIcon />} desc='Synthetic Assets on the Bitcoin network' />
-          </FlexCol>
+            <App 
+              name='Fuji Money' 
+              icon={<FujiMoneyIcon />} 
+              backgroundImage='/images/apps_backgrounds/price_alerts.png'
+            />
+          </div>
         </Padded>
       </Content>
     </>
