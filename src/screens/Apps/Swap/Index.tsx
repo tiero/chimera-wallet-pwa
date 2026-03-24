@@ -17,7 +17,7 @@ export default function AppSwap() {
 
   return (
     <>
-      <Header text="Swap" back={handleBack} />
+      <Header text="Swap" />
       <Content>
         <Padded>
           <CenterScreen>

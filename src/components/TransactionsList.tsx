@@ -153,8 +153,7 @@ export default function TransactionsList({ filterAsset, maxItems }: { filterAsse
 
   const handleViewAll = () => {
     hapticSubtle()
-    // TODO: Navigate to full transactions page if needed
-    // For now, we can just scroll or show all transactions
+    navigate(Pages.Transactions)
   }
 
   return (

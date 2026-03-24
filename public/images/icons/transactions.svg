@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24" height="25">
+	<path fill="none" stroke="#CED0DD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="translate(3 5)" d="M18 7L6 7M18 1L6 1M18 13L6 13M2 7C2 7.5523 1.5522799 8 1 8C0.44771999 8 0 7.5523 0 7C0 6.4477 0.44771999 6 1 6C1.5522799 6 2 6.4477 2 7ZM2 1C2 1.5522799 1.5522799 2 1 2C0.44771999 2 0 1.5522799 0 1C0 0.44771999 0.44771999 0 1 0C1.5522799 0 2 0.44771999 2 1ZM2 13C2 13.5523 1.5522799 14 1 14C0.44771999 14 0 13.5523 0 13C0 12.4477 0.44771999 12 1 12C1.5522799 12 2 12.4477 2 13Z" fill-rule="evenodd"/>
+</svg>

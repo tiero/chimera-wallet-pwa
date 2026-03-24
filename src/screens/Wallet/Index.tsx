@@ -22,6 +22,8 @@ import { psaMessage } from '../../lib/constants'
 import { AnnouncementContext } from '../../providers/announcements'
 import { WalletStaggerContainer, WalletStaggerChild } from '../../components/WalletLoadIn'
 import { ASSETS, type AssetSymbol } from '../../lib/assets'
+import Header from '../../components/Header'
+import TransactionsIcon from '../../icons/Transactions'
 
 export default function Wallet() {
   const { aspInfo } = useContext(AspContext)
@@ -55,6 +57,10 @@ export default function Wallet() {
 
   const handleBackToAll = () => {
     setSelectedAsset(null)
+  }
+
+  const handleTransactions = () => {
+    navigate(Pages.Transactions)
   }
 
   // Get balance for the selected asset (currently only BTC is supported)
@@ -96,6 +102,12 @@ export default function Wallet() {
   // Render default wallet view
   return (
     <>
+      <Header 
+        text='Wallet' 
+        auxIcon={<TransactionsIcon />}
+        auxFunc={handleTransactions}
+        auxAriaLabel='View all transactions'
+      />
       {announcement}
       <Content>
         <Padded>

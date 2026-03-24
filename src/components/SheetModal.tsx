@@ -12,6 +12,7 @@ export default function SheetModal({ children, isOpen, onClose }: SheetModalProp
     <IonModal initialBreakpoint={1} isOpen={isOpen} onDidDismiss={onClose}>
       <div
         style={{
+          backgroundColor: 'var(--ion-background-color)',
           borderTop: '1px solid var(--dark50)',
           borderRadius: '1rem',
           height: '100%',

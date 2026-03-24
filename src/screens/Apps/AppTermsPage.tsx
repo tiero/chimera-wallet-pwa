@@ -24,7 +24,10 @@ export default function AppTermsPage({ appName, terms, onAccept, onBack }: AppTe
 
   return (
     <>
-      <Header text={terms.title} back={onBack} />
+      <Header 
+        text={terms.title} 
+        back={onBack}
+      />
       <Content>
         <Padded>
           <div style={{ height: '100%', minHeight: '400px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '1.5rem' }}>

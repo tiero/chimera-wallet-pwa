@@ -49,7 +49,10 @@ export default function AppInfoPage({ appName, slides, onContinue, onBack }: App
 
   return (
     <>
-      <Header text={appName} back={onBack} />
+      <Header 
+        text={appName} 
+        back={onBack}
+      />
       <Content>
         <Padded>
           <div style={{ height: '100%', minHeight: '400px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '2rem' }}>

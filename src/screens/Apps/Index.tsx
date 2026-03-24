@@ -6,11 +6,8 @@ import Text from '../../components/Text'
 import Shadow from '../../components/Shadow'
 import { NavigationContext, Pages } from '../../providers/navigation'
 import Focusable from '../../components/Focusable'
-import FujiMoneyIcon from '../../icons/FujiMoney'
 import LendasatIcon from './Lendasat/LendasatIcon'
 import LendaswapIcon from './Lendaswap/LendaswapIcon'
-import SwapIcon from '../../icons/Swap'
-import AddressBookIcon from '../../icons/AddressBook'
 import { hapticSubtle } from '../../lib/haptics'
 
 interface AppProps {
@@ -103,42 +100,42 @@ export default function Apps() {
           }}>
             <App
               name='Swap'
-              icon={<SwapIcon big />}
+              image='/images/apps/Transfer.svg'
               page={Pages.AppSwap}
               backgroundImage='/images/apps_backgrounds/transfer.png'
             />
 
             <App
               name='Address Book'
-              icon={<AddressBookIcon big />}
+              image='/images/apps/AddressBook.svg'
               page={Pages.AppAddressBook}
               backgroundImage='/images/apps_backgrounds/address_book.png'
             />
 
             <App
               name='Statement'
-              image='/images/apps/Statement.png'
+              image='/images/apps/Statement.svg'
               page={Pages.AppStatement}
               backgroundImage='/images/apps_backgrounds/statements.png'
             />
 
             <App
               name='Referral'
-              image='/images/apps/Referral.png'
+              image='/images/apps/Referral.svg'
               page={Pages.AppReferral}
               backgroundImage='/images/apps_backgrounds/referral.png'
             />
 
             <App
               name='Gift Cards'
-              image='/images/apps/Card.png'
+              image='/images/apps/GiftCards.svg'
               page={Pages.AppGiftCards}
               backgroundImage='/images/apps_backgrounds/gift_cards.png'
             />
 
             <App
               name='Card Reservation'
-              image='/images/apps/Card.png'
+              image='/images/apps/CardReservation.svg'
               page={Pages.AppCardReservation}
               backgroundImage='/images/apps_backgrounds/card_reservation.png'
             />
@@ -169,7 +166,7 @@ export default function Apps() {
             />
             <App 
               name='Fuji Money' 
-              icon={<FujiMoneyIcon />} 
+              image='/images/apps/PriceAlerts.svg'
               backgroundImage='/images/apps_backgrounds/price_alerts.png'
             />
           </div>

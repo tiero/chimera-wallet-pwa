@@ -2,11 +2,14 @@ import { IonHeader, IonTitle } from '@ionic/react'
 import React, { useContext } from 'react'
 import { NavigationContext } from '../providers/navigation'
 import BackIcon from '../icons/Back'
+import SupportIcon from '../icons/Support'
 import Shadow from './Shadow'
 import Text from './Text'
 import FlexRow from './FlexRow'
 import Focusable from './Focusable'
 import { hapticLight } from '../lib/haptics'
+
+const KNOWLEDGE_BASE_URL = 'https://support.chimerawallet.com'
 
 interface HeaderProps {
   auxAriaLabel?: string
@@ -28,6 +31,12 @@ export default function Header({ auxAriaLabel, auxFunc, auxText, back, text, aux
         else goBack()
       }
     : undefined
+
+  const handleSupport = () => {
+    hapticLight()
+    window.open(KNOWLEDGE_BASE_URL, '_blank')
+  }
+
   const SideButton = (text: string) => (
     <Shadow>
       <Text centered tiny wrap>
@@ -55,7 +64,11 @@ export default function Header({ auxAriaLabel, auxFunc, auxText, back, text, aux
               </div>
             </Focusable>
           ) : (
-            '\u00A0'
+            <Focusable onEnter={handleSupport} fit round>
+              <div onClick={handleSupport} style={{ cursor: 'pointer' }} aria-label='Support / Knowledge Base'>
+                <SupportIcon />
+              </div>
+            </Focusable>
           )}
         </div>
         <IonTitle
