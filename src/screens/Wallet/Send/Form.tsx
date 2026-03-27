@@ -86,7 +86,7 @@ export default function SendForm() {
   const [textValue, setTextValue] = useState('')
   const [tryingToSelfSend, setTryingToSelfSend] = useState(false)
 
-  // Asset and network can be changed, initialized from AssetNetworkSelect or defaults
+  // Asset and network can be changed, initialized from wallet flow or defaults
   const [selectedAsset, setSelectedAsset] = useState<AssetSymbol>('BTC')
   const selectedMethod: TransferMethod = sendInfo.method ?? TRANSFER_METHOD.bitcoin
 

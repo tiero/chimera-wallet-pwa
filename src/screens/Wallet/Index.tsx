@@ -24,6 +24,9 @@ import { WalletStaggerContainer, WalletStaggerChild } from '../../components/Wal
 import { ASSETS, type AssetSymbol } from '../../lib/assets'
 import Header from '../../components/Header'
 import TransactionsIcon from '../../icons/Transactions'
+import AssetSelector from '../../components/AssetSelector'
+import NetworkSelector from '../../components/NetworkSelector'
+import { TRANSFER_METHOD, type TransferMethod } from '../../lib/transferMethods'
 
 export default function Wallet() {
   const { aspInfo } = useContext(AspContext)
@@ -37,18 +40,66 @@ export default function Wallet() {
   const [selectedAsset, setSelectedAsset] = useState<AssetSymbol | null>(null)
   const shouldStagger = isInitialLoad
 
+  // Modal flow state
+  const [flowMode, setFlowMode] = useState<'send' | 'receive' | null>(null)
+  const [showAssetSelector, setShowAssetSelector] = useState(false)
+  const [showNetworkSelector, setShowNetworkSelector] = useState(false)
+  const [selectedFlowAsset, setSelectedFlowAsset] = useState<AssetSymbol>('BTC')
+  const [selectedNetwork, setSelectedNetwork] = useState<TransferMethod>(TRANSFER_METHOD.bitcoin)
+
   useEffect(() => {
     setError(aspInfo.unreachable)
   }, [aspInfo.unreachable])
 
   const handleReceive = () => {
     setRecvInfo(emptyRecvInfo)
-    navigate(Pages.AssetNetworkSelect, { mode: 'receive' })
+    setFlowMode('receive')
+    setSelectedFlowAsset('BTC')
+    setSelectedNetwork(TRANSFER_METHOD.bitcoin)
+    setShowAssetSelector(true)
   }
 
   const handleSend = () => {
     setSendInfo(emptySendInfo)
-    navigate(Pages.AssetNetworkSelect, { mode: 'send' })
+    setFlowMode('send')
+    setSelectedFlowAsset('BTC')
+    setSelectedNetwork(TRANSFER_METHOD.bitcoin)
+    setShowAssetSelector(true)
+  }
+
+  const handleAssetSelected = (asset: AssetSymbol) => {
+    setSelectedFlowAsset(asset)
+    setShowAssetSelector(false)
+    setShowNetworkSelector(true)
+  }
+
+  const handleNetworkSelected = (network: TransferMethod) => {
+    setSelectedNetwork(network)
+    setShowNetworkSelector(false)
+
+    if (!flowMode) return
+
+    // Update flow context and navigate based on mode and network
+    if (flowMode === 'send') {
+      setSendInfo({ ...emptySendInfo, method: network })
+      
+      if (network === TRANSFER_METHOD.bank) {
+        navigate(Pages.BankSend)
+      } else {
+        navigate(Pages.SendForm)
+      }
+    } else {
+      setRecvInfo({ ...emptyRecvInfo, method: network })
+      
+      if (network === TRANSFER_METHOD.bank) {
+        navigate(Pages.BankReceive)
+      } else {
+        navigate(Pages.ReceiveAmount)
+      }
+    }
+
+    // Reset flow state
+    setFlowMode(null)
   }
 
   const handleAssetClick = (symbol: AssetSymbol) => {
@@ -95,6 +146,23 @@ export default function Wallet() {
             </FlexCol>
           </Padded>
         </Content>
+        {/* Modal selectors - only render when needed */}
+        {showAssetSelector ? (
+          <AssetSelector
+            selected={selectedFlowAsset}
+            onSelect={handleAssetSelected}
+            isOpen={showAssetSelector}
+            setIsOpen={setShowAssetSelector}
+          />
+        ) : null}
+        {showNetworkSelector ? (
+          <NetworkSelector
+            selected={selectedNetwork}
+            onSelect={handleNetworkSelected}
+            isOpen={showNetworkSelector}
+            setIsOpen={setShowNetworkSelector}
+          />
+        ) : null}
       </>
     )
   }
@@ -151,6 +219,23 @@ export default function Wallet() {
           </WalletStaggerContainer>
         </Padded>
       </Content>
+      {/* Modal selectors - only render when needed */}
+      {showAssetSelector ? (
+        <AssetSelector
+          selected={selectedFlowAsset}
+          onSelect={handleAssetSelected}
+          isOpen={showAssetSelector}
+          setIsOpen={setShowAssetSelector}
+        />
+      ) : null}
+      {showNetworkSelector ? (
+        <NetworkSelector
+          selected={selectedNetwork}
+          onSelect={handleNetworkSelected}
+          isOpen={showNetworkSelector}
+          setIsOpen={setShowNetworkSelector}
+        />
+      ) : null}
     </>
   )
 }

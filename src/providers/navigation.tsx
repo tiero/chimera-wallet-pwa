@@ -13,7 +13,6 @@ import ReceiveSuccess from '../screens/Wallet/Receive/Success'
 import SendForm from '../screens/Wallet/Send/Form'
 import SendDetails from '../screens/Wallet/Send/Details'
 import SendSuccess from '../screens/Wallet/Send/Success'
-import AssetNetworkSelect from '../screens/Wallet/AssetNetworkSelect'
 import BankReceive from '../screens/Wallet/Receive/BankReceive'
 import BankSend from '../screens/Wallet/Send/BankSend'
 import BankOrderStatus from '../screens/Wallet/BankOrderStatus'
@@ -61,7 +60,6 @@ export enum Pages {
   AppAddressBookForm,
   AppAddressBookContact,
   Apps,
-  AssetNetworkSelect,
   Init,
   InitRestore,
   InitPassword,
@@ -116,7 +114,6 @@ const pageTab = {
   [Pages.AppAddressBookForm]: Tabs.Apps,
   [Pages.AppAddressBookContact]: Tabs.Apps,
   [Pages.Apps]: Tabs.Apps,
-  [Pages.AssetNetworkSelect]: Tabs.Wallet,
   [Pages.Init]: Tabs.None,
   [Pages.InitRestore]: Tabs.None,
   [Pages.InitPassword]: Tabs.None,
@@ -181,8 +178,6 @@ export const pageComponent = (page: Pages, navigationData?: Record<string, unkno
       return <AppAddressBookContact />
     case Pages.Apps:
       return <Apps />
-    case Pages.AssetNetworkSelect:
-      return <AssetNetworkSelect mode={navigationData?.mode as 'send' | 'receive' | undefined} />
     case Pages.Init:
       return <Init />
     case Pages.InitConnect:

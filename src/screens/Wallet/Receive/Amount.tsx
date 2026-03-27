@@ -66,7 +66,7 @@ export default function ReceiveAmount() {
   const [bip21uri, setBip21uri] = useState('')
   const [showQrCode, setShowQrCode] = useState(false)
 
-  // Asset and network can be changed, initialized from AssetNetworkSelect or defaults
+  // Asset and network can be changed, initialized from wallet flow or defaults
   const [selectedAsset, setSelectedAsset] = useState<AssetSymbol>('BTC')
   const selectedMethod = recvInfo.method ?? TRANSFER_METHOD.bitcoin
 
