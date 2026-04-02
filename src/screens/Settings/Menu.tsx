@@ -7,10 +7,11 @@ import { TextLabel } from '../../components/Text'
 import FlexCol from '../../components/FlexCol'
 
 export default function SettingsMenu() {
-  // get rows for Account, General and Security sections
+  // get rows for Account, Security, App and Advanced sections
   const accountRows = options.filter((o) => o.section === SettingsSections.Account)
-  const generalRows = options.filter((o) => o.section === SettingsSections.General)
   const securityRows = options.filter((o) => o.section === SettingsSections.Security)
+  const appRows = options.filter((o) => o.section === SettingsSections.App)
+  const advancedRows = options.filter((o) => o.section === SettingsSections.Advanced)
 
   return (
     <>
@@ -22,12 +23,16 @@ export default function SettingsMenu() {
             <Menu rows={accountRows} styled />
           </FlexCol>
           <FlexCol gap='0'>
-            <TextLabel>General</TextLabel>
-            <Menu rows={generalRows} styled />
-          </FlexCol>
-          <FlexCol gap='0'>
             <TextLabel>Security</TextLabel>
             <Menu rows={securityRows} styled />
+          </FlexCol>
+          <FlexCol gap='0'>
+            <TextLabel>App</TextLabel>
+            <Menu rows={appRows} styled />
+          </FlexCol>
+          <FlexCol gap='0'>
+            <TextLabel>Advanced</TextLabel>
+            <Menu rows={advancedRows} styled />
           </FlexCol>
         </FlexCol>
       </Content>

@@ -3,6 +3,7 @@ import AddressBook from './AddressBook'
 import Lock from './Lock'
 import Notifications from './Notifications'
 import Backup from './Backup'
+import Biometric from './Biometric'
 import Reset from './Reset'
 import About from './About'
 import Vtxos from './Vtxos'
@@ -11,6 +12,7 @@ import Server from './Server'
 import Support from './Support'
 import Verification from './Verification'
 import KnowledgeBase from './KnowledgeBase'
+import Language from './Language'
 import { OptionsContext } from '../../providers/options'
 import SettingsMenu from './Menu'
 import Logs from './Logs'
@@ -36,22 +38,34 @@ function settingsContent(option: SettingsOptions): JSX.Element {
       return <Advanced />
     case SettingsOptions.Backup:
       return <Backup />
+    case SettingsOptions.Biometric:
+      return <Biometric />
+    case SettingsOptions.Currency:
+      return <Fiat />
     case SettingsOptions.General:
       return <General />
     case SettingsOptions.KnowledgeBase:
       return <KnowledgeBase />
     case SettingsOptions.KYC:
       return <Verification />
+    case SettingsOptions.Language:
+      return <Language />
     case SettingsOptions.Lock:
       return <Lock />
     case SettingsOptions.Logs:
       return <Logs />
-    case SettingsOptions.Notes:
-      return <NotesForm />
+    case SettingsOptions.ManageAccount:
+      return <About /> // Placeholder - reuse About page for now
     case SettingsOptions.Notifications:
       return <Notifications />
+    case SettingsOptions.Notes:
+      return <NotesForm />
+    case SettingsOptions.Password:
+      return <Password />
     case SettingsOptions.Reset:
       return <Reset />
+    case SettingsOptions.SecretPhrase:
+      return <Backup /> // Show secret phrase uses Backup page
     case SettingsOptions.Server:
       return <Server />
     case SettingsOptions.Support:
@@ -64,8 +78,6 @@ function settingsContent(option: SettingsOptions): JSX.Element {
       return <Fiat />
     case SettingsOptions.Display:
       return <Display />
-    case SettingsOptions.Password:
-      return <Password />
     case SettingsOptions.Haptics:
       return <Haptics />
     default:

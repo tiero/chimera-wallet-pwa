@@ -18,12 +18,11 @@ import Info, { InfoLine } from '../../../components/Info'
 import InfoContainer from '../../../components/InfoContainer'
 import AssetSelector from '../../../components/AssetSelector'
 import NetworkSelector from '../../../components/NetworkSelector'
+import InlineAmountInput from '../../../components/InlineAmountInput'
 import BankTransferValidationMessages from '../../../components/BankTransferValidation'
-import { ASSETS, type AssetSymbol } from '../../../lib/assets'
+import type { AssetSymbol } from '../../../lib/assets'
 import { TRANSFER_METHOD, type TransferMethod } from '../../../lib/transferMethods'
 import { prettyNumber } from '../../../lib/format'
-import { ConfigContext } from '../../../providers/config'
-import { FiatContext } from '../../../providers/fiat'
 import WhenIcon from '../../../icons/When'
 import FeesIcon from '../../../icons/Fees'
 import {
@@ -92,10 +91,6 @@ export default function BankReceive() {
   useEffect(() => {
     setCircuit(getDefaultCircuit(currency))
   }, [currency])
-
-  const handleAmountChange = (newAmount: number) => {
-    setAmount(newAmount)
-  }
 
   const handleCreateDeposit = async () => {
     if (!validation.canProceed) {
@@ -240,49 +235,15 @@ export default function BankReceive() {
           <FlexCol gap='1.5rem'>
             <ErrorMessage error={Boolean(error)} text={error} />
 
-            {/* Inline Editable Amount Section (matching ReceiveAmount) */}
-            <div style={{ textAlign: 'center', width: '100%', marginTop: '1rem' }}>
-              <div style={{ marginBottom: '0.5rem', color: 'var(--white70)', fontSize: '0.875rem' }}>
-                Amount
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                <input
-                  type="number"
-                  value={amount || ''}
-                  onChange={(e) => {
-                    const value = e.target.value
-                    if (value === '') {
-                      setAmount(0)
-                    } else {
-                      const numValue = parseFloat(value)
-                      if (!isNaN(numValue) && numValue >= 0) {
-                        handleAmountChange(numValue)
-                      }
-                    }
-                  }}
-                  placeholder="0"
-                  style={{
-                    fontSize: '2.5rem',
-                    fontWeight: 700,
-                    color: 'white',
-                    fontFamily: 'monospace',
-                    background: 'transparent',
-                    border: 'none',
-                    outline: 'none',
-                    textAlign: 'center',
-                    width: '12ch',
-                    padding: '0.25rem',
-                  }}
-                />
-                <span style={{ fontSize: '1.25rem', fontWeight: 600, color: 'white' }}>
-                  {currency}
-                </span>
-              </div>
-              {/* BTC equivalent */}
-              <div style={{ fontSize: '1rem', color: 'var(--white50)', marginTop: '0.25rem' }}>
-                ≈ {prettyNumber(amount / 50000, 8)} BTC
-              </div>
-            </div>
+            {/* Amount Input */}
+            <InlineAmountInput
+              value={amount}
+              onChange={setAmount}
+              asset={selectedAsset}
+              currencyOverride={currency}
+              skipPrecision
+              fiatEquivalent={`≈ ${prettyNumber(amount / 50000, 8)} BTC`}
+            />
 
             <AssetSelector
               label='Asset'

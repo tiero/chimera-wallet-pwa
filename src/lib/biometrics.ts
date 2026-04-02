@@ -51,8 +51,8 @@ export async function registerUser(): Promise<{ password: string; passkeyId: str
     timeout: 60000,
     user: {
       id: password as BufferSource,
-      name: 'Arkade wallet',
-      displayName: 'Arkade wallet',
+      name: 'Chimera wallet',
+      displayName: 'Chimera wallet',
     },
   }
 

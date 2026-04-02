@@ -14,7 +14,7 @@ import FlexCol from '../../../components/FlexCol'
 import { WalletContext } from '../../../providers/wallet'
 import { callFaucet, pingFaucet } from '../../../lib/faucet'
 import Loading from '../../../components/Loading'
-import { prettyAmount } from '../../../lib/format'
+import { prettyAmount, prettyNumber } from '../../../lib/format'
 import Success from '../../../components/Success'
 import { consoleError } from '../../../lib/logs'
 import { AspContext } from '../../../providers/asp'
@@ -29,6 +29,7 @@ import { encodeBip21 } from '../../../lib/bip21'
 import { ASSETS, type AssetSymbol } from '../../../lib/assets'
 import AssetSelector from '../../../components/AssetSelector'
 import NetworkSelector from '../../../components/NetworkSelector'
+import InlineAmountInput from '../../../components/InlineAmountInput'
 import WhenIcon from '../../../icons/When'
 import FeesIcon from '../../../icons/Fees'
 import {
@@ -59,7 +60,7 @@ export default function ReceiveAmount() {
   const [fauceting, setFauceting] = useState(false)
   const [faucetSuccess, setFaucetSuccess] = useState(false)
   const [faucetAvailable, setFaucetAvailable] = useState(false)
-  const [satoshis, setSatoshis] = useState(0) // No amount input, always 0 for flexible QR codes
+  const [satoshis, setSatoshis] = useState(0) // Amount for Lightning, 0 for flexible QR codes on other networks
   const [sharing, setSharing] = useState(false)
   const [invoice, setInvoice] = useState(recvInfo.invoice ?? '')
   const [qrValue, setQrValue] = useState('')
@@ -119,21 +120,25 @@ export default function ReceiveAmount() {
 
   // manage all possible receive methods
   const { boardingAddr, offchainAddr } = recvInfo
+  const isLightningMethod = selectedMethod === TRANSFER_METHOD.lightning
   const allowUtxo = validUtxoTx(satoshis) && utxoTxsAllowed()
   const allowVtxo = validVtxoTx(satoshis) && vtxoTxsAllowed()
   const allowLn = validLnSwap(satoshis)
 
   const address = selectedMethod === TRANSFER_METHOD.bitcoin ? (allowUtxo ? boardingAddr : '') : ''
   const arkAddress = selectedMethod === TRANSFER_METHOD.ark ? (allowVtxo ? offchainAddr : '') : ''
-  const useLightning = selectedMethod === TRANSFER_METHOD.lightning ? allowLn : false
+  const useLightning = isLightningMethod ? allowLn : false
   const noPaymentMethods = !address && !arkAddress && !useLightning
   const showFaucetButton = balance === 0 && faucetAvailable
-  const showLightningFees = satoshis && selectedMethod === TRANSFER_METHOD.lightning
+  const showLightningFees = satoshis && isLightningMethod
   const reverseSwapFee = calcReverseSwapFee(satoshis)
   const lightningFeeText = `Lightning fees: ${prettyAmount(reverseSwapFee)}`
   const methodTimeInfo = `Transfer time: ${RECEIVE_METHOD_TIME_TEXT[selectedMethod]}`
   const methodFeesInfo = `Fees: ${RECEIVE_METHOD_FEES_TEXT[selectedMethod]}`
   const methodWarningInfo = RECEIVE_METHOD_WARNING_TEXT[selectedMethod]
+  
+  // For Lightning, require amount before showing QR code
+  const needsAmountInput = isLightningMethod && !satoshis
 
   const disabled = !canBrowserShareData({ title: 'Receive', text: qrValue }) || sharing
 
@@ -241,6 +246,16 @@ export default function ReceiveAmount() {
         <Padded>
           <FlexCol>
             <ErrorMessage error={Boolean(error)} text={error} />
+            
+            {/* Amount Input for Lightning */}
+            {isLightningMethod ? (
+              <InlineAmountInput
+                value={satoshis}
+                onChange={setSatoshis}
+                asset={selectedAsset}
+              />
+            ) : null}
+            
             <AssetSelector
               label='Asset'
               selected={selectedAsset}
@@ -265,7 +280,11 @@ export default function ReceiveAmount() {
                 {methodFeesInfo ? <InfoLine compact icon={<FeesIcon />} text={methodFeesInfo} /> : null}
               </InfoContainer>
             )}
-            {noPaymentMethods ? (
+            {needsAmountInput ? (
+              <div style={{ textAlign: 'center', color: 'var(--white70)', padding: '2rem 0' }}>
+                Enter an amount to receive via Lightning
+              </div>
+            ) : noPaymentMethods ? (
               <div>No valid payment methods available for this amount</div>
             ) : showQrCode ? (
               <FlexCol centered>

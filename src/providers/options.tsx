@@ -23,6 +23,7 @@ export interface Option {
 }
 
 export const options: Option[] = [
+  // Account Section
   {
     icon: <KYCIcon />,
     option: SettingsOptions.KYC,
@@ -34,69 +35,93 @@ export const options: Option[] = [
     section: SettingsSections.Account,
   },
   {
+    icon: <CogIcon />,
+    option: SettingsOptions.ManageAccount,
+    section: SettingsSections.Account,
+  },
+  {
     icon: <AddressBookIcon />,
     option: SettingsOptions.AddressBook,
     section: SettingsSections.Account,
   },
+  // Security Section
   {
-    icon: <InfoIcon />,
-    option: SettingsOptions.About,
-    section: SettingsSections.General,
-  },
-  {
-    icon: <PuzzleIcon />,
-    option: SettingsOptions.Advanced,
+    icon: <LockIcon />,
+    option: SettingsOptions.Biometric,
     section: SettingsSections.Security,
   },
   {
     icon: <BackupIcon />,
-    option: SettingsOptions.Backup,
+    option: SettingsOptions.SecretPhrase,
     section: SettingsSections.Security,
+  },
+  // App Section
+  {
+    icon: <InfoIcon />,
+    option: SettingsOptions.Language,
+    section: SettingsSections.App,
   },
   {
     icon: <CogIcon />,
-    option: SettingsOptions.General,
-    section: SettingsSections.General,
-  },
-  {
-    icon: <LockIcon />,
-    option: SettingsOptions.Lock,
-    section: SettingsSections.Security,
-  },
-  {
-    icon: <LogsIcon />,
-    option: SettingsOptions.Logs,
-    section: SettingsSections.Advanced,
-  },
-  {
-    icon: <NotesIcon />,
-    option: SettingsOptions.Notes,
-    section: SettingsSections.General,
+    option: SettingsOptions.Currency,
+    section: SettingsSections.App,
   },
   {
     icon: <NotificationIcon />,
     option: SettingsOptions.Notifications,
-    section: SettingsSections.General,
+    section: SettingsSections.App,
+  },
+  // Advanced Section
+  {
+    icon: <PuzzleIcon />,
+    option: SettingsOptions.Advanced,
+    section: SettingsSections.Advanced,
+  },
+  // Hidden/Config options
+  {
+    icon: <InfoIcon />,
+    option: SettingsOptions.About,
+    section: SettingsSections.Config,
+  },
+  {
+    icon: <BackupIcon />,
+    option: SettingsOptions.Backup,
+    section: SettingsSections.Config,
+  },
+  {
+    icon: <LockIcon />,
+    option: SettingsOptions.Lock,
+    section: SettingsSections.Config,
+  },
+  {
+    icon: <LogsIcon />,
+    option: SettingsOptions.Logs,
+    section: SettingsSections.Config,
   },
   {
     icon: <ResetIcon />,
     option: SettingsOptions.Reset,
-    section: SettingsSections.Security,
+    section: SettingsSections.Config,
   },
   {
     icon: <ServerIcon />,
     option: SettingsOptions.Server,
-    section: SettingsSections.Advanced,
+    section: SettingsSections.Config,
+  },
+  {
+    icon: <NotesIcon />,
+    option: SettingsOptions.Notes,
+    section: SettingsSections.Config,
   },
   {
     icon: <SupportIcon />,
     option: SettingsOptions.Support,
-    section: SettingsSections.General,
+    section: SettingsSections.Config,
   },
   {
     icon: <VtxosIcon />,
     option: SettingsOptions.Vtxos,
-    section: SettingsSections.Advanced,
+    section: SettingsSections.Config,
   },
   {
     icon: <></>,
@@ -121,7 +146,7 @@ export const options: Option[] = [
   {
     icon: <></>,
     option: SettingsOptions.Password,
-    section: SettingsSections.Advanced,
+    section: SettingsSections.Config,
   },
 ]
 
@@ -130,7 +155,7 @@ export interface SectionResponse {
   options: Option[]
 }
 
-const allOptions: SectionResponse[] = [SettingsSections.Account, SettingsSections.General, SettingsSections.Security].map((section) => {
+const allOptions: SectionResponse[] = [SettingsSections.Account, SettingsSections.Security, SettingsSections.App, SettingsSections.Advanced].map((section) => {
   return {
     section,
     options: options.filter((o) => o.section === section),
@@ -176,12 +201,41 @@ export const OptionsProvider = ({ children }: { children: ReactNode }) => {
   const goBack = useCallback(() => {
     setDirection('back')
     setOption((current) => {
+      // If we're on a specific settings page, determine where to go back
+      if (current === SettingsOptions.Menu) {
+        return SettingsOptions.Menu // Already at top level
+      }
+      
       const section = optionSection(current)
-      return section === SettingsSections.Advanced
-        ? SettingsOptions.Advanced
-        : section === SettingsSections.Config
-          ? SettingsOptions.General
-          : SettingsOptions.Menu
+      
+      // Handle Config section items (these are sub-items within other sections)
+      if (section === SettingsSections.Config) {
+        // Items like Theme, Display, Haptics are under General (if still used)
+        if (current === SettingsOptions.Theme || 
+            current === SettingsOptions.Display || 
+            current === SettingsOptions.Haptics) {
+          return SettingsOptions.General
+        }
+        // Fiat goes directly from App > Currency, so back goes to menu
+        if (current === SettingsOptions.Fiat) {
+          return SettingsOptions.Menu
+        }
+        // Items like Lock, Reset, Server, Logs, Vtxos, Password are under Advanced
+        if (current === SettingsOptions.Lock || 
+            current === SettingsOptions.Reset || 
+            current === SettingsOptions.Server || 
+            current === SettingsOptions.Logs || 
+            current === SettingsOptions.Vtxos ||
+            current === SettingsOptions.Password) {
+          return SettingsOptions.Advanced
+        }
+        // Items like Backup are standalone in Security but kept in Config for routing
+        // Go back to menu for these
+        return SettingsOptions.Menu
+      }
+      
+      // For items in Account, Security, App, Advanced sections, go back to menu
+      return SettingsOptions.Menu
     })
   }, [setOption])
 

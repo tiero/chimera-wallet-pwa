@@ -1,9 +1,7 @@
 import { useContext } from 'react'
 import { NavigationContext, Pages } from '../../../providers/navigation'
 import CenterScreen from '../../../components/CenterScreen'
-import FlexCol from '../../../components/FlexCol'
-import Text, { TextSecondary } from '../../../components/Text'
-import ComingSoonIcon from '../../../icons/ComingSoon'
+import Text from '../../../components/Text'
 import Content from '../../../components/Content'
 import Padded from '../../../components/Padded'
 import Header from '../../../components/Header'
@@ -21,13 +19,7 @@ export default function AppSwap() {
       <Content>
         <Padded>
           <CenterScreen>
-            <FlexCol centered gap='1rem'>
-              <ComingSoonIcon />
-              <FlexCol centered gap='0.5rem'>
-                <Text heading>Coming Soon</Text>
-                <TextSecondary>The swap service is temporarily unavailable. Please check back later.</TextSecondary>
-              </FlexCol>
-            </FlexCol>
+            <Text heading>Coming Soon</Text>
           </CenterScreen>
         </Padded>
       </Content>

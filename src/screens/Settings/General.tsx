@@ -47,25 +47,11 @@ export default function General() {
 
   return (
     <>
-      <Header text='General' back />
+      <Header text='App Settings' back />
       <Content>
         <Padded>
           <FlexCol gap='0'>
-            <Row
-              option={SettingsOptions.Theme}
-              value={config.theme === Themes.Auto ? `Auto (${systemTheme})` : config.theme}
-            />
-            <hr
-              style={{
-                backgroundColor: 'var(--dark20)',
-                width: '100%',
-              }}
-            />
             <Row option={SettingsOptions.Fiat} value={config.fiat} />
-            <hr style={{ backgroundColor: 'var(--dark20)', width: '100%' }} />
-            <Row option={SettingsOptions.Display} value={config.currencyDisplay} />
-            <hr style={{ backgroundColor: 'var(--dark20)', width: '100%' }} />
-            <Row option={SettingsOptions.Haptics} value={config.haptics ? 'On' : 'Off'} />
           </FlexCol>
         </Padded>
       </Content>

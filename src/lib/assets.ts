@@ -34,7 +34,7 @@ export const ASSETS = {
     precision: 6,
   },
   MATIC: {
-    symbol: 'MATIC',
+    symbol: 'POL',
     name: 'Polygon',
     color: 'asset-matic',
     precision: 18,

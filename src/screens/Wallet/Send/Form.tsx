@@ -46,6 +46,7 @@ import { getNetworkConfig } from '../../../lib/networks'
 import { ASSETS, type AssetSymbol } from '../../../lib/assets'
 import AssetSelector from '../../../components/AssetSelector'
 import NetworkSelector from '../../../components/NetworkSelector'
+import InlineAmountInput from '../../../components/InlineAmountInput'
 import WhenIcon from '../../../icons/When'
 import FeesIcon from '../../../icons/Fees'
 import {
@@ -500,50 +501,15 @@ export default function SendForm() {
         <Padded>
           <FlexCol gap='2rem'>
             <ErrorMessage error={Boolean(error)} text={error} />
-            {/* Inline Editable Amount Section */}
-            <div style={{ textAlign: 'center', width: '100%', marginTop: '1rem' }}>
-              <div style={{ marginBottom: '0.5rem', color: 'var(--white70)', fontSize: '0.875rem' }}>
-                Amount
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                <input
-                  type="number"
-                  value={amount ? amount / Math.pow(10, ASSETS[selectedAsset].precision) : ''}
-                  onChange={(e) => {
-                    const value = e.target.value
-                    if (value === '') {
-                      setAmount(undefined)
-                    } else {
-                      const numValue = parseFloat(value)
-                      if (!isNaN(numValue) && numValue >= 0) {
-                        handleAmountChange(Math.floor(numValue * Math.pow(10, ASSETS[selectedAsset].precision)))
-                      }
-                    }
-                  }}
-                  placeholder="0"
-                  disabled={amountIsReadOnly}
-                  style={{
-                    fontSize: '2.5rem',
-                    fontWeight: 700,
-                    color: 'white',
-                    fontFamily: 'monospace',
-                    background: 'transparent',
-                    border: 'none',
-                    outline: 'none',
-                    textAlign: 'center',
-                    width: '12ch',
-                    padding: '0.25rem',
-                  }}
-                />
-                <span style={{ fontSize: '1.25rem', fontWeight: 600, color: 'white' }}>
-                  {ASSETS[selectedAsset].symbol}
-                </span>
-              </div>
-              {/* Fiat equivalent */}
-              <div style={{ fontSize: '1rem', color: 'var(--white50)', marginTop: '0.25rem' }}>
-                {prettyNumber(toFiat(amount || 0), 2)} {config.fiat}
-              </div>
-            </div>
+            
+            {/* Amount Input */}
+            <InlineAmountInput
+              value={amount || 0}
+              onChange={(newAmount) => handleAmountChange(newAmount)}
+              asset={selectedAsset}
+              disabled={amountIsReadOnly}
+            />
+            
             <AssetSelector
               label='Asset'
               selected={selectedAsset}

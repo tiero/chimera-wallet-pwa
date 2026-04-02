@@ -128,21 +128,6 @@ export const appConfigs: Record<string, AppConfig> = {
     icon: 'card-reservation',
     live: true,
     infoSlides: [],
-    terms: {
-      title: 'Terms & Conditions',
-      content: `By reserving a Chimera Card, you agree to the following terms:
-
-1. Card Availability: The Chimera Card is currently in development. Reserving a card does not guarantee availability or delivery timeline.
-
-2. Eligibility: Card eligibility may be subject to geographic restrictions and regulatory requirements.
-
-3. Information Usage: Your reservation information will be used to notify you when the card becomes available in your region.
-
-4. Privacy: Your personal information will be handled in accordance with our Privacy Policy.
-
-5. No Fees: There is no fee to reserve a card. Any future fees will be clearly communicated before the card is issued.`,
-      checkboxLabel: 'I agree to the Terms & Conditions',
-    },
     urls: {
       production: 'https://chimerawallet.com/card-reservation-app/',
       // No staging URL for card reservation

@@ -139,6 +139,18 @@ export default function Apps() {
               page={Pages.AppCardReservation}
               backgroundImage='/images/apps_backgrounds/card_reservation.png'
             />
+          </div>
+
+          {/* Third Party Apps Section */}
+          <div style={{ marginTop: '2rem', marginBottom: '1rem' }}>
+            <Text bold large>Third Party Apps</Text>
+          </div>
+
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(2, 1fr)', 
+            width: '100%'
+          }}>
 {/* 
             <App
               name='Boltz'
