@@ -48,13 +48,6 @@ export default function Init() {
               <WalletNewIcon />
             </OnboardStaggerChild>
             <OnboardStaggerChild>
-              <FlexCol centered gap='0'>
-                <Text bigger heading medium>
-                  Chimera Wallet
-                </Text>
-              </FlexCol>
-            </OnboardStaggerChild>
-            <OnboardStaggerChild>
               <ErrorMessage error={error} text='Ark server unreachable' />
             </OnboardStaggerChild>
           </OnboardStaggerContainer>
