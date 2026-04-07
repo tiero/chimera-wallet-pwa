@@ -43,7 +43,9 @@ export const ASSETS = {
 
 export type AssetSymbol = keyof typeof ASSETS
 
-export const ASSET_LIST: AssetConfig[] = Object.values(ASSETS)
+// TEMPORARY: Only show BTC
+export const ASSET_LIST: AssetConfig[] = [ASSETS.BTC]
+// export const ASSET_LIST: AssetConfig[] = Object.values(ASSETS)
 
 export const getAssetConfig = (symbol: string): AssetConfig | undefined => {
   return ASSETS[symbol.toUpperCase() as AssetSymbol]

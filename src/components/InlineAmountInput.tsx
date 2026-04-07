@@ -11,14 +11,15 @@ interface InlineAmountInputProps {
   asset: AssetSymbol
   disabled?: boolean
   placeholder?: string
-  fiatEquivalent?: string // Optional custom fiat display
-  currencyOverride?: string // Optional: override asset symbol display (for bank fiat currencies)
-  skipPrecision?: boolean // Optional: skip precision conversion (for bank fiat amounts)
+  bankCurrency?: string // Optional: for bank transfers (EUR/CHF) - enables BTC<->bankCurrency swap
 }
 
 /**
  * Reusable inline amount input component with large centered text
  * Used across Send, Receive (Lightning), and Bank Transfer screens
+ * 
+ * For regular crypto: swaps between BTC and user's fiat (USD/EUR via config)
+ * For bank transfers: swaps between BTC and bank currency (EUR/CHF)
  */
 export default function InlineAmountInput({
   value,
@@ -26,9 +27,7 @@ export default function InlineAmountInput({
   asset,
   disabled = false,
   placeholder = '0',
-  fiatEquivalent,
-  currencyOverride,
-  skipPrecision = false,
+  bankCurrency,
 }: InlineAmountInputProps) {
   const { config } = useContext(ConfigContext)
   const { toFiat, fromFiat } = useContext(FiatContext)
@@ -39,14 +38,16 @@ export default function InlineAmountInput({
   const [inputString, setInputString] = useState('')
 
   const assetInfo = ASSETS[asset]
+  const isBankTransfer = Boolean(bankCurrency)
   
   // Calculate display values based on input mode
-  const cryptoValue = skipPrecision
-    ? value
+  // For bank transfers: value is in fiat cents/units, not satoshis
+  const cryptoValue = isBankTransfer
+    ? value / 50000 // Rough BTC estimate for display (will need real rate)
     : value / Math.pow(10, assetInfo.precision)
   
-  const fiatValue = skipPrecision
-    ? value // For bank transfers, value is already in fiat currency (EUR/CHF), not satoshis
+  const fiatValue = isBankTransfer
+    ? value // For bank transfers, value IS the fiat amount
     : toFiat(value)
   
   // Use inputString while typing, or calculated value when empty/switching modes
@@ -72,20 +73,25 @@ export default function InlineAmountInput({
       if (!isNaN(numValue) && numValue >= 0) {
         let finalValue: number
         
-        if (inputMode === 'fiat') {
-          // User entered fiat, convert to base units (satoshis)
-          if (skipPrecision) {
-            // For bank transfers, value is stored directly in fiat
+        if (isBankTransfer) {
+          // Bank transfer mode
+          if (inputMode === 'fiat') {
+            // User entered fiat amount directly
             finalValue = numValue
           } else {
-            // For crypto, convert from fiat to satoshis
-            finalValue = fromFiat(numValue)
+            // User entered BTC, convert to fiat
+            // Using rough conversion - in production would use real rate
+            finalValue = numValue * 50000
           }
         } else {
-          // User entered crypto, convert to base units if needed
-          finalValue = skipPrecision
-            ? numValue
-            : Math.floor(numValue * Math.pow(10, assetInfo.precision))
+          // Regular crypto mode
+          if (inputMode === 'fiat') {
+            // User entered fiat, convert to satoshis
+            finalValue = fromFiat(numValue)
+          } else {
+            // User entered crypto, convert to base units
+            finalValue = Math.floor(numValue * Math.pow(10, assetInfo.precision))
+          }
         }
         
         onChange(finalValue)
@@ -106,11 +112,13 @@ export default function InlineAmountInput({
   }
 
   // Display strings
-  const currencySymbol = currencyOverride || assetInfo.symbol
-  const primaryCurrency = inputMode === 'crypto' ? currencySymbol : config.fiat
+  const primaryCurrency = inputMode === 'crypto' 
+    ? assetInfo.symbol 
+    : (bankCurrency || config.fiat)
+  
   const secondaryValue = inputMode === 'crypto'
-    ? `${prettyNumber(fiatValue, 2)} ${config.fiat}`
-    : fiatEquivalent || `${prettyNumber(cryptoValue, 8)} ${currencySymbol}`
+    ? `${prettyNumber(fiatValue, 2)} ${bankCurrency || config.fiat}`
+    : `≈ ${prettyNumber(cryptoValue, 8)} ${assetInfo.symbol}`
 
   // Calculate dynamic font size based on number of digits
   const displayString = String(displayValue)

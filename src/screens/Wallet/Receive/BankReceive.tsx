@@ -240,9 +240,7 @@ export default function BankReceive() {
               value={amount}
               onChange={setAmount}
               asset={selectedAsset}
-              currencyOverride={currency}
-              skipPrecision
-              fiatEquivalent={`≈ ${prettyNumber(amount / 50000, 8)} BTC`}
+              bankCurrency={currency}
             />
 
             <AssetSelector
