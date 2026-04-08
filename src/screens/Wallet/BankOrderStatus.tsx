@@ -126,6 +126,10 @@ export default function BankOrderStatus() {
   const isRejected = order.status === 'REJECTED'
   const isProcessing = ['DEPOSIT_RECEIVED', 'DEPOSIT_CONFIRMED', 'PROCESSING'].includes(order.status)
 
+  // Determine order type (deposit vs withdrawal)
+  const isDepositOrder = order.from_asset !== 'BTC' // Fiat → Crypto
+  const isWithdrawalOrder = order.from_asset === 'BTC' // Crypto → Fiat
+
   // Build table data
   const tableData: TableData = [
     ['Order ID', order.id.slice(0, 8) + '...'],
@@ -181,14 +185,20 @@ export default function BankOrderStatus() {
 
             {isProcessing ? (
               <Info color='yellow' title='Processing'>
-                <TextSecondary>Your deposit has been received and is being processed.</TextSecondary>
+                <TextSecondary>
+                  {isDepositOrder
+                    ? 'Your deposit has been received and is being processed.'
+                    : 'Your crypto has been received and is being processed.'}
+                </TextSecondary>
               </Info>
             ) : null}
 
             {isWaitingForDeposit ? (
-              <Info color='blue' title='Awaiting Deposit'>
+              <Info color='blue' title={isDepositOrder ? 'Awaiting Bank Transfer' : 'Awaiting Crypto Deposit'}>
                 <TextSecondary>
-                  Waiting for your bank transfer. Once received, your order will be processed.
+                  {isDepositOrder
+                    ? 'Waiting for your bank transfer. Once received, your order will be processed.'
+                    : 'Waiting for your crypto deposit. Please send the required amount to complete the order.'}
                 </TextSecondary>
               </Info>
             ) : null}
@@ -196,8 +206,8 @@ export default function BankOrderStatus() {
             {/* Order Details Table */}
             <Table data={tableData} />
 
-            {/* Bank Deposit Details (for deposits waiting for fiat transfer) */}
-            {isWaitingForDeposit && hasBankDetails ? (
+            {/* Bank Deposit Details (for deposit orders waiting for fiat transfer) */}
+            {isWaitingForDeposit && isDepositOrder && hasBankDetails ? (
               <FlexCol gap='1rem'>
                 {/* Transfer Reference */}
                 {order.transfer_code ? (
@@ -239,6 +249,31 @@ export default function BankOrderStatus() {
                   </Shadow>
                 ) : null}
               </FlexCol>
+            ) : null}
+
+            {/* Crypto Deposit Details (for withdrawal orders waiting for crypto) */}
+            {isWaitingForDeposit && isWithdrawalOrder && order.deposit_crypto_address ? (
+              <Shadow fat>
+                <FlexCol gap='0.75rem'>
+                  <Text bold>Send Crypto To</Text>
+                  <FlexCol gap='0.5rem'>
+                    <Text small color='var(--white70)'>
+                      Deposit Address
+                    </Text>
+                    <div style={{ wordBreak: 'break-all' }}>
+                      <Text small bold>
+                        {order.deposit_crypto_address}
+                      </Text>
+                    </div>
+                  </FlexCol>
+                  <Info color='orange' title='Important'>
+                    <TextSecondary>
+                      Send exactly {order.from_amount} {order.from_asset} to this address to complete your withdrawal.
+                      Your {order.to_asset} will be sent to your bank account once the crypto deposit is confirmed.
+                    </TextSecondary>
+                  </Info>
+                </FlexCol>
+              </Shadow>
             ) : null}
           </FlexCol>
         </Padded>
