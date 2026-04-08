@@ -58,7 +58,8 @@ export default function BankOrderStatus() {
         setOrder(orderData)
         setError('')
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load order')
+        const errorMsg = err instanceof Error ? err.message : 'Failed to load order'
+        setError(errorMsg)
       } finally {
         setLoading(false)
         setRefreshing(false)

@@ -132,6 +132,8 @@ export default function BankReceive() {
           amount: numAmount,
           order: response.order,
         })
+      } else {
+        setError('Failed to create order - no order returned')
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create deposit order')
