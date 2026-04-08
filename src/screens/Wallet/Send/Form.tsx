@@ -14,14 +14,13 @@ import {
 } from '../../../lib/address'
 import { AspContext } from '../../../providers/asp'
 import { isArkNote } from '../../../lib/arknote'
-import InputAmount from '../../../components/InputAmount'
 import InputAddress from '../../../components/InputAddress'
 import Header from '../../../components/Header'
 import { WalletContext } from '../../../providers/wallet'
 import { prettyAmount, prettyNumber } from '../../../lib/format'
 import Content from '../../../components/Content'
 import FlexCol from '../../../components/FlexCol'
-import Keyboard from '../../../components/Keyboard'
+import FlexRow from '../../../components/FlexRow'
 import Text from '../../../components/Text'
 import InfoContainer from '../../../components/InfoContainer'
 import Scanner from '../../../components/Scanner'
@@ -30,7 +29,6 @@ import { consoleError } from '../../../lib/logs'
 import { Addresses, SettingsOptions } from '../../../lib/types'
 import { getReceivingAddresses } from '../../../lib/asp'
 import { OptionsContext } from '../../../providers/options'
-import { isMobileBrowser } from '../../../lib/browser'
 import { ConfigContext } from '../../../providers/config'
 import { FiatContext } from '../../../providers/fiat'
 import { ArkNote } from '@arkade-os/sdk'
@@ -43,18 +41,17 @@ import { decodeBip21, isBip21 } from '../../../lib/bip21'
 import { FeesContext } from '../../../providers/fees'
 import { InfoLine } from '../../../components/Info'
 import { getNetworkConfig } from '../../../lib/networks'
-import { ASSETS, type AssetSymbol } from '../../../lib/assets'
+import { type AssetSymbol } from '../../../lib/assets'
 import AssetSelector from '../../../components/AssetSelector'
 import NetworkSelector from '../../../components/NetworkSelector'
 import InlineAmountInput from '../../../components/InlineAmountInput'
 import WhenIcon from '../../../icons/When'
 import FeesIcon from '../../../icons/Fees'
+import InfoIcon from '../../../icons/Info'
 import {
+  TERMS_AND_CONDITIONS,
   TRANSFER_METHOD,
-  TRANSFER_METHOD_LABELS,
-  SEND_METHOD_FEES_TEXT,
-  SEND_METHOD_TIME_TEXT,
-  SEND_METHOD_WARNING_TEXT,
+  type InfoItemIcon,
 } from '../../../lib/transferMethods'
 
 export default function SendForm() {
@@ -77,14 +74,12 @@ export default function SendForm() {
   const [focus, setFocus] = useState('recipient')
   const [label, setLabel] = useState('')
   const [lnUrlLimits, setLnUrlLimits] = useState<{ min: number; max: number }>({ min: 0, max: 0 })
-  const [keys, setKeys] = useState(false)
   const [nudgeBoltz, setNudgeBoltz] = useState(false)
   const [proceed, setProceed] = useState(false)
   const [processing, setProcessing] = useState(false)
   const [recipient, setRecipient] = useState('')
   const [receivingAddresses, setReceivingAddresses] = useState<Addresses>()
   const [scan, setScan] = useState(false)
-  const [textValue, setTextValue] = useState('')
   const [tryingToSelfSend, setTryingToSelfSend] = useState(false)
 
   // Asset and network can be changed, initialized from wallet flow or defaults
@@ -115,10 +110,8 @@ export default function SendForm() {
 
   // update form with existing send info
   useEffect(() => {
-    const { recipient, satoshis } = sendInfo
+    const { recipient } = sendInfo
     setRecipient(recipient ?? '')
-    if (!satoshis) return
-    setTextValue(useFiat ? prettyNumber(fromFiat(satoshis)) : prettyNumber(satoshis, 0, false))
   }, [])
 
   // update available balance
@@ -243,11 +236,6 @@ export default function SendForm() {
       .catch(() => setError('Invalid address or LNURL'))
   }, [sendInfo.lnUrl])
 
-  // check if user wants to send all funds
-  useEffect(() => {
-    if (sendInfo.lnUrl && sendInfo.satoshis === balance) handleSendAll()
-  }, [sendInfo.lnUrl])
-
   // validate recipient addresses
   useEffect(() => {
     if (!receivingAddresses) return
@@ -282,14 +270,7 @@ export default function SendForm() {
     setError('')
   }, [receivingAddresses, sendInfo.address, sendInfo.arkAddress, sendInfo.invoice])
 
-  // set text value from satoshis
-  useEffect(() => {
-    if (!sendInfo.satoshis) return
-    const sats = sendInfo.satoshis
-    const value = useFiat ? toFiat(sats) : sats
-    const maximumFractionDigits = useFiat ? 2 : 0
-    setTextValue(prettyNumber(value, maximumFractionDigits, false))
-  }, [sendInfo.satoshis])
+
 
   // manage button label and errors
   useEffect(() => {
@@ -368,9 +349,14 @@ export default function SendForm() {
   }
 
   const handleAmountChange = (sats: number) => {
-    setTextValue(useFiat ? prettyNumber(toFiat(sats), 2, false) : prettyNumber(sats, 0, false))
     setState({ ...sendInfo, satoshis: sats })
     setAmount(sats)
+  }
+
+  const handlePercentage = (percent: number) => {
+    const amountInSats = Math.floor(availableBalance * (percent / 100))
+    setState({ ...sendInfo, satoshis: amountInSats })
+    setAmount(amountInSats)
   }
 
   const handleRecipientChange = (recipient: string) => {
@@ -431,32 +417,6 @@ export default function SendForm() {
     if (!recipient && focus === 'amount') setFocus('recipient')
   }
 
-  const handleFocus = () => {
-    if (isMobileBrowser) setKeys(true)
-  }
-
-  const handleSendAll = () => {
-    const fees = sendInfo.lnUrl ? (calcSubmarineSwapFee(availableBalance) ?? 0) : 0
-    const amountInSats = availableBalance - fees
-    const maximumFractionDigits = useFiat ? 2 : 0
-    const value = useFiat ? toFiat(amountInSats) : amountInSats
-    setTextValue(prettyNumber(value, maximumFractionDigits, false))
-    setState({ ...sendInfo, satoshis: amountInSats })
-    setAmount(amountInSats)
-  }
-
-  const Available = () => {
-    const amount = useFiat ? toFiat(availableBalance) : availableBalance
-    const pretty = useFiat ? prettyAmount(amount, config.fiat) : prettyAmount(amount)
-    return (
-      <div onClick={handleSendAll} style={{ cursor: 'pointer' }}>
-        <Text smaller>
-          {`${pretty} available`}
-        </Text>
-      </div>
-    )
-  }
-
   const { address, arkAddress, lnUrl, invoice, satoshis } = sendInfo
 
   const resolvedMethod = selectedMethod
@@ -470,9 +430,21 @@ export default function SendForm() {
   })()
 
   const methodFeeText = methodFee !== undefined ? `Estimated fees: ${prettyAmount(methodFee)}` : ''
-  const methodTimeInfo = `Transfer time: ${SEND_METHOD_TIME_TEXT[resolvedMethod]}`
-  const methodFeesInfo = `Fees: ${SEND_METHOD_FEES_TEXT[resolvedMethod]}`
-  const methodWarningInfo = SEND_METHOD_WARNING_TEXT[resolvedMethod]
+
+  // Get T&Cs for current method
+  const termsAndConditions = TERMS_AND_CONDITIONS.send[resolvedMethod]
+
+  // Helper to get icon component
+  const getIconComponent = (iconType?: InfoItemIcon) => {
+    switch (iconType) {
+      case 'time': return <WhenIcon />
+      case 'fees': return <FeesIcon />
+      case 'warning': return undefined
+      case 'instruction': return undefined
+      case 'info': return <InfoIcon />
+      default: return <InfoIcon />
+    }
+  }
 
   const buttonDisabled =
     selectedMethod === TRANSFER_METHOD.bank ||
@@ -510,6 +482,41 @@ export default function SendForm() {
               disabled={amountIsReadOnly}
             />
             
+            {/* Percentage Buttons */}
+            {!amountIsReadOnly && availableBalance > 0 ? (
+              <div style={{ marginTop: '-0.5rem' }}>
+                <FlexRow centered gap='0.5rem'>
+                  {[25, 50, 75, 100].map((percent) => (
+                    <button
+                      key={percent}
+                      onClick={() => handlePercentage(percent)}
+                      style={{
+                        background: 'var(--dark20)',
+                        border: '1px solid var(--dark50)',
+                        borderRadius: '0.5rem',
+                        color: 'var(--white70)',
+                        cursor: 'pointer',
+                        fontSize: '0.875rem',
+                        fontWeight: 500,
+                        padding: '0.5rem 1rem',
+                        transition: 'all 0.2s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'var(--dark50)'
+                        e.currentTarget.style.color = 'var(--white)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'var(--dark20)'
+                        e.currentTarget.style.color = 'var(--white70)'
+                      }}
+                    >
+                      {percent}%
+                    </button>
+                  ))}
+                </FlexRow>
+              </div>
+            ) : null}
+            
             <AssetSelector
               label='Asset'
               selected={selectedAsset}
@@ -545,21 +552,35 @@ export default function SendForm() {
                 onChange={handleRecipientChange}
                 onEnter={handleEnter}
                 openAddressBook={() => navigate(Pages.AppAddressBook, { selectionMode: true, returnTo: Pages.SendForm })}
-                openScan={() => {
-                  setKeys(false)
-                  setScan(true)
-                }}
+                openScan={() => setScan(true)}
                 value={recipient}
               />
-            {Boolean(methodWarningInfo || methodFeeText || methodTimeInfo || methodFeesInfo || deductFromAmount) && (
-              <InfoContainer>
-                {methodWarningInfo ? <InfoLine compact color='orange' text={methodWarningInfo} /> : null}
-                {methodFeeText ? <InfoLine compact color='orange' icon={<FeesIcon />} text={methodFeeText} /> : null}
-                {methodTimeInfo ? <InfoLine compact icon={<WhenIcon />} text={methodTimeInfo} /> : null}
-                {methodFeesInfo ? <InfoLine compact icon={<FeesIcon />} text={methodFeesInfo} /> : null}
-                {deductFromAmount ? <InfoLine compact color='orange' text='Fees will be deducted from the amount sent' /> : null}
-              </InfoContainer>
-            )}
+            <InfoContainer>
+              {termsAndConditions.map((item) => (
+                <InfoLine
+                  key={item.text}
+                  compact
+                  color={item.color}
+                  icon={getIconComponent(item.icon)}
+                  text={item.text}
+                />
+              ))}
+              {methodFeeText ? (
+                <InfoLine
+                  compact
+                  color='orange'
+                  icon={<FeesIcon />}
+                  text={methodFeeText}
+                />
+              ) : null}
+              {deductFromAmount ? (
+                <InfoLine
+                  compact
+                  color='orange'
+                  text='Fees will be deducted from the amount sent'
+                />
+              ) : null}
+            </InfoContainer>
             {tryingToSelfSend ? (
               <div style={{ width: '100%' }}>
                 <Text centered small>

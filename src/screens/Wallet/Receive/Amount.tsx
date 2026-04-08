@@ -32,12 +32,12 @@ import NetworkSelector from '../../../components/NetworkSelector'
 import InlineAmountInput from '../../../components/InlineAmountInput'
 import WhenIcon from '../../../icons/When'
 import FeesIcon from '../../../icons/Fees'
+import InfoIcon from '../../../icons/Info'
 import {
-  RECEIVE_METHOD_FEES_TEXT,
-  RECEIVE_METHOD_TIME_TEXT,
-  RECEIVE_METHOD_WARNING_TEXT,
+  TERMS_AND_CONDITIONS,
   TRANSFER_METHOD,
   TRANSFER_METHOD_LABELS,
+  type InfoItemIcon,
   type TransferMethod,
 } from '../../../lib/transferMethods'
 
@@ -132,13 +132,24 @@ export default function ReceiveAmount() {
   const showFaucetButton = balance === 0 && faucetAvailable
   const showLightningFees = satoshis && isLightningMethod
   const reverseSwapFee = calcReverseSwapFee(satoshis)
-  const lightningFeeText = `Lightning fees: ${prettyAmount(reverseSwapFee)}`
-  const methodTimeInfo = `Transfer time: ${RECEIVE_METHOD_TIME_TEXT[selectedMethod]}`
-  const methodFeesInfo = `Fees: ${RECEIVE_METHOD_FEES_TEXT[selectedMethod]}`
-  const methodWarningInfo = RECEIVE_METHOD_WARNING_TEXT[selectedMethod]
   
   // For Lightning, require amount before showing QR code
   const needsAmountInput = isLightningMethod && !satoshis
+
+  // Get T&Cs for current method
+  const termsAndConditions = TERMS_AND_CONDITIONS.receive[selectedMethod]
+
+  // Helper to get icon component
+  const getIconComponent = (iconType?: InfoItemIcon) => {
+    switch (iconType) {
+      case 'time': return <WhenIcon />
+      case 'fees': return <FeesIcon />
+      case 'warning': return undefined
+      case 'instruction': return undefined
+      case 'info': return <InfoIcon />
+      default: return <InfoIcon />
+    }
+  }
 
   const disabled = !canBrowserShareData({ title: 'Receive', text: qrValue }) || sharing
 
@@ -272,19 +283,33 @@ export default function ReceiveAmount() {
                 setRecvInfo({ ...recvInfo, method: network, invoice: undefined })
               }}
             />
-            {Boolean(methodWarningInfo || showLightningFees || methodTimeInfo || methodFeesInfo) && (
-              <InfoContainer>
-                {methodWarningInfo ? <InfoLine compact color='orange' text={methodWarningInfo} /> : null}
-                {showLightningFees ? <InfoLine compact color='orange' icon={<FeesIcon />} text={lightningFeeText} /> : null}
-                {methodTimeInfo ? <InfoLine compact icon={<WhenIcon />} text={methodTimeInfo} /> : null}
-                {methodFeesInfo ? <InfoLine compact icon={<FeesIcon />} text={methodFeesInfo} /> : null}
-              </InfoContainer>
-            )}
-            {needsAmountInput ? (
-              <div style={{ textAlign: 'center', color: 'var(--white70)', padding: '2rem 0' }}>
-                Enter an amount to receive via Lightning
-              </div>
-            ) : noPaymentMethods ? (
+            <InfoContainer>
+              {needsAmountInput ? (
+                <InfoLine
+                  compact
+                  icon={<InfoIcon />}
+                  text='For Lightning Network receives, please enter an amount above to generate your invoice and QR code.'
+                />
+              ) : null}
+              {termsAndConditions.map((item) => (
+                <InfoLine
+                  key={item.text}
+                  compact
+                  color={item.color}
+                  icon={getIconComponent(item.icon)}
+                  text={item.text}
+                />
+              ))}
+              {showLightningFees ? (
+                <InfoLine
+                  compact
+                  color='orange'
+                  icon={<FeesIcon />}
+                  text={`Lightning fees: ${prettyAmount(reverseSwapFee)}`}
+                />
+              ) : null}
+            </InfoContainer>
+            {noPaymentMethods ? (
               <div>No valid payment methods available for this amount</div>
             ) : showQrCode ? (
               <FlexCol centered>
