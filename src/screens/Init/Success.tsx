@@ -25,7 +25,17 @@ export default function InitSuccess() {
     <>
       <Header text='Create new wallet' />
       <Content>
-        <Success headline={headline} text={text} />
+        <Success 
+          headline={headline} 
+          text={text} 
+          icon={
+            <img 
+              src='/arkade-icon.svg' 
+              alt='Chimera Wallet' 
+              style={{ width: '160px', height: '160px' }} 
+            />
+          } 
+        />
       </Content>
       <ButtonsOnBottom>
         <Button onClick={() => navigate(Pages.InitConnect)} label='Go to wallet' />
