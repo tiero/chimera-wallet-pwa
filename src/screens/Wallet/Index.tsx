@@ -54,17 +54,35 @@ export default function Wallet() {
   const handleReceive = () => {
     setRecvInfo(emptyRecvInfo)
     setFlowMode('receive')
-    setSelectedFlowAsset('BTC')
-    setSelectedNetwork(TRANSFER_METHOD.bitcoin)
-    setShowAssetSelector(true)
+    
+    // If on asset detail view, skip asset selection and go directly to network
+    if (selectedAsset) {
+      setSelectedFlowAsset(selectedAsset)
+      setSelectedNetwork(TRANSFER_METHOD.bitcoin)
+      setShowAssetSelector(false)
+      setShowNetworkSelector(true)
+    } else {
+      setSelectedFlowAsset('BTC')
+      setSelectedNetwork(TRANSFER_METHOD.bitcoin)
+      setShowAssetSelector(true)
+    }
   }
 
   const handleSend = () => {
     setSendInfo(emptySendInfo)
     setFlowMode('send')
-    setSelectedFlowAsset('BTC')
-    setSelectedNetwork(TRANSFER_METHOD.bitcoin)
-    setShowAssetSelector(true)
+    
+    // If on asset detail view, skip asset selection and go directly to network
+    if (selectedAsset) {
+      setSelectedFlowAsset(selectedAsset)
+      setSelectedNetwork(TRANSFER_METHOD.bitcoin)
+      setShowAssetSelector(false)
+      setShowNetworkSelector(true)
+    } else {
+      setSelectedFlowAsset('BTC')
+      setSelectedNetwork(TRANSFER_METHOD.bitcoin)
+      setShowAssetSelector(true)
+    }
   }
 
   const handleAssetSelected = (asset: AssetSymbol) => {
@@ -129,6 +147,10 @@ export default function Wallet() {
   if (selectedAsset) {
     return (
       <>
+        <Header 
+          text={selectedAsset} 
+          back={handleBackToAll}
+        />
         {announcement}
         <Content>
           <Padded>
@@ -136,7 +158,6 @@ export default function Wallet() {
               <AssetBalanceView
                 symbol={selectedAsset}
                 balance={getAssetBalance(selectedAsset)}
-                onBack={handleBackToAll}
               />
               <FlexRow padding='0.5rem 0'>
                 <Button main icon={<SendIcon />} iconPosition='right' label='Send' onClick={handleSend} />

@@ -5,10 +5,9 @@ import { getAssetConfig, type AssetSymbol } from '../lib/assets'
 interface AssetBalanceViewProps {
   symbol: AssetSymbol | string
   balance: number
-  onBack: () => void
 }
 
-export default function AssetBalanceView({ symbol, balance, onBack }: AssetBalanceViewProps) {
+export default function AssetBalanceView({ symbol, balance }: AssetBalanceViewProps) {
   const config = getAssetConfig(symbol)
   const assetName = config?.name || symbol
   const precision = config?.precision || 8
@@ -23,24 +22,6 @@ export default function AssetBalanceView({ symbol, balance, onBack }: AssetBalan
 
   return (
     <div style={{ width: '100%' }}>
-      {/* Back button */}
-      <button
-        onClick={onBack}
-        style={{
-          background: 'none',
-          border: 'none',
-          color: 'var(--white70)',
-          fontSize: 14,
-          cursor: 'pointer',
-          padding: '8px 0',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 4,
-        }}
-      >
-        ← All assets
-      </button>
-
       {/* Asset Header */}
       <div
         style={{
