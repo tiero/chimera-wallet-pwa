@@ -3,13 +3,11 @@ name: Azure Static Web Apps CI/CD
 on:
   push:
     branches:
-      - main
       - master
       - staging
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches:
-      - main
       - master
       - staging
 
@@ -87,6 +85,7 @@ jobs:
           app_location: "dist"
           output_location: ""
           skip_app_build: true   # We already built above
+          production_branch: "master"
 
   close_pull_request:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
