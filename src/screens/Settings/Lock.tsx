@@ -37,12 +37,13 @@ export default function Lock() {
   }
 
   const handleLock = async () => {
-    lockWallet()
-      .then(() => navigate(Pages.Unlock))
-      .catch((err) => {
-        consoleError(err, 'error locking wallet')
-        setError(extractError(err))
-      })
+    try {
+      await lockWallet()
+      // Don't manually navigate - let App.tsx handle it via the initialized state change
+    } catch (err) {
+      consoleError(err, 'error locking wallet')
+      setError(extractError(err))
+    }
   }
 
   return (

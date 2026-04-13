@@ -18,6 +18,16 @@ export default function Unlock() {
   const [unlocked, setUnlocked] = useState(false)
   const [shouldAutoUnlock, setShouldAutoUnlock] = useState(false)
   const [unlocking, setUnlocking] = useState(false)
+  const [timeoutReached, setTimeoutReached] = useState(false)
+
+  // Reset unlock state when component mounts to prevent stale state
+  useEffect(() => {
+    return () => {
+      // Cleanup on unmount
+      setUnlocking(false)
+      setUnlocked(false)
+    }
+  }, [])
 
   // Check if we should auto-unlock (only if no custom password and no biometrics)
   useEffect(() => {
@@ -65,9 +75,30 @@ export default function Unlock() {
     }
   }, [unlocked, dataReady, navigate])
 
+  // Add timeout to prevent infinite loading
+  useEffect(() => {
+    if (!unlocking) return
+    
+    const timeout = setTimeout(() => {
+      if (unlocking && !dataReady) {
+        setTimeoutReached(true)
+        setUnlocking(false)
+        setError('Unlock timed out. Please try again.')
+        consoleError(new Error('Unlock timeout'), 'Wallet unlock exceeded 30 seconds')
+      }
+    }, 30000) // 30 second timeout
+    
+    return () => clearTimeout(timeout)
+  }, [unlocking, dataReady])
+
   // Show loading spinner while unlocking if unlocked but waiting for data
-  if (unlocking || (unlocked && !dataReady)) {
+  if (unlocking && !timeoutReached) {
     return <Loading text='Unlocking wallet...' />
+  }
+  
+  // If unlocked but data not ready and timeout not reached, keep showing loading
+  if (unlocked && !dataReady && !timeoutReached) {
+    return <Loading text='Loading wallet data...' />
   }
 
   return tried ? (
