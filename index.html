@@ -11,9 +11,9 @@
           document.head.appendChild(script);
           
           window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-          gtag('config', 'G-50G6GJL5B5');
+          window.gtag = function(){dataLayer.push(arguments);}
+          window.gtag('js', new Date());
+          window.gtag('config', 'G-50G6GJL5B5');
         })();
       }
     </script>
