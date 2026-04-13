@@ -1,5 +1,4 @@
 import { OnboardStaggerContainer, OnboardStaggerChild } from '../components/OnboardLoadIn'
-import SuccessIcon from '../icons/Success'
 import CenterScreen from './CenterScreen'
 import FlexCol from './FlexCol'
 import Text from './Text'
@@ -12,12 +11,20 @@ interface SuccessProps {
 }
 
 export default function Success({ headline, text, icon }: SuccessProps) {
+  const defaultIcon = (
+    <img 
+      src='/arkade-icon.svg' 
+      alt='Chimera Wallet' 
+      style={{ width: '160px', height: '160px' }} 
+    />
+  )
+
   return (
     <CenterScreen>
       <OnboardStaggerContainer>
         <OnboardStaggerChild>
           <FlexCol centered gap='1rem'>
-            {icon || <SuccessIcon />}
+            {icon || defaultIcon}
             {headline ? (
               <Text centered big medium heading wrap>
                 {headline}
