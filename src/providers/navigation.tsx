@@ -244,6 +244,7 @@ interface NavigationContextProps {
   direction: NavigationDirection
   goBack: () => void
   isInitialLoad: boolean
+  navigationCount: number
   screen: Pages
   tab: Tabs
 }
@@ -253,6 +254,7 @@ export const NavigationContext = createContext<NavigationContextProps>({
   goBack: () => {},
   isInitialLoad: false,
   navigate: () => {},
+  navigationCount: 0,
   navigationData: undefined,
   screen: Pages.Init,
   tab: Tabs.None,
@@ -263,6 +265,7 @@ export const NavigationProvider = ({ children }: { children: ReactNode }) => {
   const [tab, setTab] = useState(Tabs.None)
   const [navigationData, setNavigationData] = useState<Record<string, unknown> | undefined>(undefined)
   const [direction, setDirection] = useState<NavigationDirection>('none')
+  const [navigationCount, setNavigationCount] = useState(0)
 
   const navigationHistory = useRef<Pages[]>([])
   const previousPage = useRef<Pages>(Pages.Init)
@@ -339,13 +342,14 @@ export const NavigationProvider = ({ children }: { children: ReactNode }) => {
     setScreen(page)
     setTab(nextTab)
     setNavigationData(data)
+    setNavigationCount(prev => prev + 1)
     
     // Track page view for analytics
     trackPageView(Pages[page])
   }
 
   return (
-    <NavigationContext.Provider value={{ direction, goBack, isInitialLoad, navigate, navigationData, screen, tab }}>
+    <NavigationContext.Provider value={{ direction, goBack, isInitialLoad, navigate, navigationCount, navigationData, screen, tab }}>
       {children}
     </NavigationContext.Provider>
   )

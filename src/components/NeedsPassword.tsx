@@ -69,17 +69,9 @@ export default function NeedsPassword({ error, onPassword, loading = false }: Ne
       </Content>
       <ButtonsOnBottom>
         {showPasswordInput ? (
-          <>
-            <Button onClick={handleClick} label='Unlock wallet' loading={loading} disabled={loading} />
-            {wallet.lockedByBiometrics ? (
-              <Button onClick={() => setUsePasswordFallback(false)} label='Use biometrics' secondary disabled={loading} />
-            ) : null}
-          </>
+          <Button onClick={handleClick} label='Unlock wallet' loading={loading} disabled={loading} />
         ) : (
-          <>
-            <Button onClick={handleBiometrics} label='Unlock using biometrics' loading={loading} disabled={loading} />
-            <Button onClick={() => setUsePasswordFallback(true)} label='Use password instead' secondary disabled={loading} />
-          </>
+          <Button onClick={handleBiometrics} label='Unlock using biometrics' loading={loading} disabled={loading} />
         )}
       </ButtonsOnBottom>
     </>

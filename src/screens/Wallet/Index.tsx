@@ -32,7 +32,7 @@ export default function Wallet() {
   const { aspInfo } = useContext(AspContext)
   const { announcement } = useContext(AnnouncementContext)
   const { setRecvInfo, setSendInfo } = useContext(FlowContext)
-  const { isInitialLoad, navigate } = useContext(NavigationContext)
+  const { isInitialLoad, navigate, navigationCount, screen } = useContext(NavigationContext)
   const { balance, txs } = useContext(WalletContext)
   const { nudge } = useContext(NudgeContext)
 
@@ -50,6 +50,13 @@ export default function Wallet() {
   useEffect(() => {
     setError(aspInfo.unreachable)
   }, [aspInfo.unreachable])
+
+  // Reset to main wallet view when navigating to Pages.Wallet
+  useEffect(() => {
+    if (screen === Pages.Wallet) {
+      setSelectedAsset(null)
+    }
+  }, [navigationCount, screen])
 
   const handleReceive = () => {
     setRecvInfo(emptyRecvInfo)
