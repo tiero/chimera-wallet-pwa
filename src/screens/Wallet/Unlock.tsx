@@ -7,9 +7,10 @@ import NeedsPassword from '../../components/NeedsPassword'
 import Header from '../../components/Header'
 import { defaultPassword } from '../../lib/constants'
 import Loading from '../../components/Loading'
+import { clearStorage } from '../../lib/storage'
 
 export default function Unlock() {
-  const { initWallet, dataReady, wallet } = useContext(WalletContext)
+  const { initWallet, dataReady, wallet, updateWallet } = useContext(WalletContext)
   const { navigate } = useContext(NavigationContext)
 
   const [error, setError] = useState('')
@@ -101,10 +102,15 @@ export default function Unlock() {
     return <Loading text='Loading wallet data...' />
   }
 
+  const handleRestore = async () => {
+    await clearStorage()
+    updateWallet({ network: '', nextRollover: 0 })
+  }
+
   return tried ? (
     <>
       <Header text='Unlock' />
-      <NeedsPassword error={error} onPassword={setPassword} loading={unlocking} />
+      <NeedsPassword error={error} onPassword={setPassword} loading={unlocking} onRestore={handleRestore} />
     </>
   ) : (
     <Loading />

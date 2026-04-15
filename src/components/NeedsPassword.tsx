@@ -17,9 +17,10 @@ interface NeedsPasswordProps {
   error: string
   onPassword: (password: string) => void
   loading?: boolean
+  onRestore?: () => void
 }
 
-export default function NeedsPassword({ error, onPassword, loading = false }: NeedsPasswordProps) {
+export default function NeedsPassword({ error, onPassword, loading = false, onRestore }: NeedsPasswordProps) {
   const { wallet } = useContext(WalletContext)
   const [password, setPassword] = useState('')
   const [usePasswordFallback, setUsePasswordFallback] = useState(false)
@@ -55,7 +56,7 @@ export default function NeedsPassword({ error, onPassword, loading = false }: Ne
               <ErrorMessage text={error} error={Boolean(error)} />
               {wallet.lockedByBiometrics && usePasswordFallback ? (
                 <TextSecondary wrap>
-                  Note: If biometrics was enabled, you'll need to disable it from Settings first or restore your wallet using your private key.
+                  Your passkey could not be found on this device. Enter your password, or restore your wallet using your secret phrase.
                 </TextSecondary>
               ) : null}
             </FlexCol>
@@ -69,7 +70,12 @@ export default function NeedsPassword({ error, onPassword, loading = false }: Ne
       </Content>
       <ButtonsOnBottom>
         {showPasswordInput ? (
-          <Button onClick={handleClick} label='Unlock wallet' loading={loading} disabled={loading} />
+          <>
+            <Button onClick={handleClick} label='Unlock wallet' loading={loading} disabled={loading} />
+            {wallet.lockedByBiometrics && usePasswordFallback && onRestore ? (
+              <Button onClick={onRestore} label='Restore from secret phrase' secondary disabled={loading} />
+            ) : null}
+          </>
         ) : (
           <Button onClick={handleBiometrics} label='Unlock using biometrics' loading={loading} disabled={loading} />
         )}
