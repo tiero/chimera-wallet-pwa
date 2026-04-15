@@ -45,15 +45,15 @@ export default function ReceiveQRCode() {
   const defaultBip21uri = encodeBip21(address, arkAddress, '', satoshis)
 
   const [invoice, setInvoice] = useState(recvInfo.invoice ?? '')
-  const [qrValue, setQrValue] = useState(defaultBip21uri)
+  const [qrValue, setQrValue] = useState(invoice || arkAddress || address)
   const [bip21uri, setBip21uri] = useState(defaultBip21uri)
   const [showQrCode, setShowQrCode] = useState(false)
 
-  // set the QR code value to the bip21uri the first time
+  // set the QR code value to the plain address the first time
   useEffect(() => {
     const bip21uri = encodeBip21(address, arkAddress, invoice, satoshis)
     setBip21uri(bip21uri)
-    setQrValue(bip21uri)
+    setQrValue(invoice || arkAddress || address)
     if (invoice) setShowQrCode(true)
   }, [invoice])
 
@@ -119,15 +119,16 @@ export default function ReceiveQRCode() {
     }
   }, [svcWallet])
 
+  const shareText = invoice || arkAddress || address
+
   const handleShare = () => {
     setSharing(true)
-    shareData(data)
+    shareData({ title: 'Receive', text: shareText })
       .catch(consoleError)
       .finally(() => setSharing(false))
   }
 
-  const data = { title: 'Receive', text: qrValue }
-  const disabled = !canBrowserShareData(data) || sharing
+  const disabled = !canBrowserShareData({ title: 'Receive', text: shareText }) || sharing
 
   return (
     <>

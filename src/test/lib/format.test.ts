@@ -115,8 +115,8 @@ describe('format utilities', () => {
   describe('prettyHide', () => {
     it('should return masked value', () => {
       expect(prettyHide(0)).toBe('')
-      expect(prettyHide(12345)).toBe('·········· SATS')
-      expect(prettyHide(999999999)).toBe('·················· SATS')
+      expect(prettyHide(12345)).toBe('······ SATS')
+      expect(prettyHide(999999999)).toBe('······ SATS')
     })
   })
 

@@ -68,9 +68,7 @@ export const prettyDate = (num: number): string => {
 
 export const prettyHide = (value: string | number, suffix = 'SATS'): string => {
   if (!value) return ''
-  const str = typeof value === 'string' ? value : value.toString()
-  const length = str.length * 2 > 6 ? str.length * 2 : 6
-  return Array(length).fill('·').join('') + ' ' + suffix
+  return '······' + (suffix ? ' ' + suffix : '')
 }
 
 export const prettyLongText = (str?: string, showChars = 11): string => {
