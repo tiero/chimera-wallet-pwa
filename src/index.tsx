@@ -13,10 +13,17 @@ import { OptionsProvider } from './providers/options'
 import { LimitsProvider } from './providers/limits'
 import { NudgeProvider } from './providers/nudge'
 import * as Sentry from '@sentry/react'
+import { init as initPlausible } from '@plausible-analytics/tracker'
 import { LightningProvider } from './providers/lightning'
 import { shouldInitializeSentry } from './lib/sentry'
 import { FeesProvider } from './providers/fees'
 import { AnnouncementProvider } from './providers/announcements'
+
+// Initialize Plausible analytics when domain is configured
+const plausibleDomain = import.meta.env.VITE_PLAUSIBLE_DOMAIN
+if (plausibleDomain) {
+  initPlausible({ domain: plausibleDomain, autoCapturePageviews: false, captureOnLocalhost: false })
+}
 
 // Initialize Sentry only in production and when DSN is provided
 const sentryDsn = import.meta.env.VITE_SENTRY_DSN

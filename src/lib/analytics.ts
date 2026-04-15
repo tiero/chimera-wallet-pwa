@@ -1,40 +1,19 @@
-// Google Analytics helper functions
-// Only tracks when on app.chimerawallet.com
-
-declare global {
-  interface Window {
-    gtag?: (...args: any[]) => void
-  }
-}
-
-export const isAnalyticsEnabled = (): boolean => {
-  return typeof window !== 'undefined' && 
-         window.location.hostname === 'app.chimerawallet.com' && 
-         typeof window.gtag === 'function'
-}
+import { track } from '@plausible-analytics/tracker'
 
 export const trackPageView = (pageName: string): void => {
-  if (!isAnalyticsEnabled()) return
-  
   try {
-    window.gtag!('event', 'page_view', {
-      page_title: pageName,
-      page_location: window.location.href,
-      page_path: `/${pageName}`,
-    })
+    track('pageview', { url: `${window.location.origin}/${pageName}` })
   } catch (err) {
     console.error('Analytics tracking error:', err)
   }
 }
 
 export const trackEvent = (
-  eventName: string, 
-  eventParams?: Record<string, any>
+  eventName: string,
+  props?: Record<string, string>
 ): void => {
-  if (!isAnalyticsEnabled()) return
-  
   try {
-    window.gtag!('event', eventName, eventParams)
+    track(eventName, { props })
   } catch (err) {
     console.error('Analytics event tracking error:', err)
   }
