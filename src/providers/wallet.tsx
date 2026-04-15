@@ -169,7 +169,10 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       const balance = await getBalance(swWallet)
       setBalance(balance)
       setVtxos(vtxos)
-      setTxs(txs)
+      // Only replace existing transactions if we received data back.
+      // During an ARK round the indexer can briefly return an empty list
+      // while processing, causing transactions to flicker off then back on.
+      setTxs((prev) => (txs.length > 0 ? txs : prev))
       if (!hasLoadedOnce.current) {
         hasLoadedOnce.current = true
         setDataReady(true)
