@@ -76,6 +76,14 @@ jobs:
       - name: Build application
         run: pnpm run build
 
+      - name: Install API dependencies
+        run: pnpm install
+        working-directory: api
+
+      - name: Build API
+        run: pnpm run build
+        working-directory: api
+
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
@@ -83,6 +91,7 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
           app_location: "dist"
+          api_location: "api"
           output_location: ""
           skip_app_build: true   # We already built above
           production_branch: "master"
