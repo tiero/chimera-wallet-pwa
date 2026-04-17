@@ -1,5 +1,6 @@
 import { useContext, useEffect, useState } from 'react'
 import { WalletContext } from '../../providers/wallet'
+import { FlowContext } from '../../providers/flow'
 import { consoleError } from '../../lib/logs'
 import { getPrivateKey, noUserDefinedPassword } from '../../lib/privateKey'
 import { NavigationContext, Pages } from '../../providers/navigation'
@@ -12,6 +13,7 @@ import { clearStorage } from '../../lib/storage'
 export default function Unlock() {
   const { initWallet, dataReady, wallet, updateWallet } = useContext(WalletContext)
   const { navigate } = useContext(NavigationContext)
+  const { deepLinkInfo } = useContext(FlowContext)
 
   const [error, setError] = useState('')
   const [password, setPassword] = useState('')
@@ -72,9 +74,12 @@ export default function Unlock() {
   useEffect(() => {
     if (unlocked && dataReady) {
       setUnlocking(false)
-      navigate(Pages.Wallet)
+      // If a deep link is pending, let the wallet provider handle navigation
+      if (!deepLinkInfo?.appId) {
+        navigate(Pages.Wallet)
+      }
     }
-  }, [unlocked, dataReady, navigate])
+  }, [unlocked, dataReady, navigate, deepLinkInfo])
 
   // Add timeout to prevent infinite loading
   useEffect(() => {
