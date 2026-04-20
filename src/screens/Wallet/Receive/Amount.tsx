@@ -178,8 +178,9 @@ export default function ReceiveAmount() {
           arkadeLightning
             .waitAndClaim(pendingSwap)
             .then(() => {
-              setRecvInfo({ ...recvInfo, satoshis: pendingSwap.response.onchainAmount })
-              notifyPaymentReceived(pendingSwap.response.onchainAmount)
+              const onchainSats = pendingSwap.response.onchainAmount ?? satoshis
+              setRecvInfo({ ...recvInfo, satoshis: onchainSats })
+              notifyPaymentReceived(onchainSats)
             })
             .catch((error) => {
               setShowQrCode(true)

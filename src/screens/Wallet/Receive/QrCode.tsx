@@ -75,7 +75,7 @@ export default function ReceiveQRCode() {
           arkadeLightning
             .waitAndClaim(pendingSwap)
             .then(() => {
-              setRecvInfo({ ...recvInfo, satoshis: pendingSwap.response.onchainAmount })
+              setRecvInfo({ ...recvInfo, satoshis: pendingSwap.response.onchainAmount ?? satoshis })
               navigate(Pages.ReceiveSuccess)
             })
             .catch((error) => {

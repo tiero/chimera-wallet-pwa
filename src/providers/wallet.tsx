@@ -337,7 +337,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     if (!svcWallet) throw new Error('Service worker not initialized')
     await clearStorage()
     await svcWallet.clear()
-    await svcWallet.contractRepository.clearContractData()
+    await svcWallet.contractRepository.clear()
     setDataReady(false)
     setSynced(false)
     syncedRef.current = false
