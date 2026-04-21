@@ -23179,7 +23179,7 @@ class df {
     if (this.initialized)
       return;
     const e = await this.config.contractRepository.getContracts();
-    await this.deltaSyncContracts(e), e.length > 0 && await this.reconcilePendingFrontier(e);
+    await this.deltaSyncContracts(e, void 0, !0), e.length > 0 && await this.reconcilePendingFrontier(e);
     const r = Date.now();
     for (const n of e)
       n.state === "active" && n.expiresAt && n.expiresAt <= r && (n.state = "inactive", await this.config.contractRepository.saveContract(n)), await this.watcher.addContract(n);
@@ -23434,34 +23434,42 @@ class df {
     this.emitEvent(e);
   }
   async getVtxosForContracts(e, r) {
-    return e.length === 0 ? /* @__PURE__ */ new Map() : await this.fetchContractVxosFromIndexer(e, !1, r);
+    return e.length === 0 ? /* @__PURE__ */ new Map() : this.syncVtxosCallInflight ? this.syncVtxosCallInflight : (this.syncVtxosCallInflight = this.fetchContractVxosFromIndexer(e, !0, r).finally(() => {
+      this.syncVtxosCallInflight = void 0;
+    }), this.syncVtxosCallInflight);
   }
   /**
    * Incrementally sync virtual outputs for the given contracts.
    * Uses per-script cursors to fetch only what changed since the last sync.
    * Scripts without a cursor are bootstrapped with a full fetch.
    */
-  async deltaSyncContracts(e, r) {
+  async deltaSyncContracts(e, r, n) {
     if (e.length === 0)
       return /* @__PURE__ */ new Map();
-    const n = await Iy(this.config.walletRepository), i = [], s = [];
-    for (const c of e)
-      n[c.script] !== void 0 ? s.push(c) : i.push(c);
-    const o = /* @__PURE__ */ new Map(), a = {};
-    if (i.length > 0) {
-      const c = Date.now(), u = await this.fetchContractVxosFromIndexer(i, !0), l = Ns(c);
-      for (const [d, h] of u)
-        o.set(d, h), a[d] = l;
+    n === !0 && await Promise.all(e.map((u) => this.config.walletRepository.deleteVtxos(u.address)));
+    const i = await Iy(this.config.walletRepository), s = [], o = [];
+    for (const u of e) {
+      if (n) {
+        s.push(u);
+        continue;
+      }
+      i[u.script] !== void 0 ? o.push(u) : s.push(u);
     }
+    const a = /* @__PURE__ */ new Map(), c = {};
     if (s.length > 0) {
-      const c = Math.min(...s.map((l) => n[l.script])), u = Py(c);
-      if (u) {
-        const l = Date.now(), d = await this.fetchContractVxosFromIndexer(s, !0, r, u), h = Ns(l);
-        for (const [p, f] of d)
-          o.set(p, f), a[p] = h;
+      const u = Date.now(), l = await this.fetchContractVxosFromIndexer(s, !0), d = Ns(u);
+      for (const [h, p] of l)
+        a.set(h, p), c[h] = d;
+    }
+    if (o.length > 0) {
+      const u = Math.min(...o.map((d) => i[d.script])), l = Py(u);
+      if (l) {
+        const d = Date.now(), h = await this.fetchContractVxosFromIndexer(o, !0, r, l), p = Ns(d);
+        for (const [f, g] of h)
+          a.set(f, g), c[f] = p;
       }
     }
-    return Object.keys(a).length > 0 && await ua(this.config.walletRepository, a), o;
+    return Object.keys(c).length > 0 && await ua(this.config.walletRepository, c), a;
   }
   /**
    * Fetch all pending (unfinalized) virtual outputs and upsert them into the
@@ -23587,7 +23595,8 @@ class df {
     this.stopWatcherFn?.(), this.stopWatcherFn = void 0, this.eventCallbacks.clear(), this.initialized = !1;
   }
 }
-function AT(t) {
+const AT = 605184n;
+function IT(t) {
   return typeof t == "object" && t !== null && "toReadonly" in t && typeof t.toReadonly == "function";
 }
 class wi {
@@ -23616,50 +23625,50 @@ class wi {
       throw new Error("Could not determine arkServerUrl from provider");
     const s = e.indexerUrl || i, o = e.indexerProvider || new tf(s), a = await n.getInfo(), c = Xw(a.network);
     if ("descriptor" in e.identity) {
-      const b = !e.identity.descriptor.includes("tpub"), T = a.network === "bitcoin";
-      if (b && !T)
+      const T = !e.identity.descriptor.includes("tpub"), k = a.network === "bitcoin";
+      if (T && !k)
         throw new Error(`Network mismatch: identity uses mainnet derivation (coin type 0) but the Arkade server is on ${a.network}. Create identity with { isMainnet: false } to use testnet derivation.`);
-      if (!b && T)
+      if (!T && k)
         throw new Error("Network mismatch: identity uses testnet derivation (coin type 1) but the Arkade server is on mainnet. Create identity with { isMainnet: true } or omit isMainnet (defaults to mainnet).");
     }
     const u = e.esploraUrl || pv[a.network], l = e.onchainProvider || new gv(u);
     if (e.exitTimelock) {
-      const { value: w, type: b } = e.exitTimelock;
-      if (w < 512n && b !== "blocks" || w >= 512n && b !== "seconds")
+      const { value: b, type: T } = e.exitTimelock;
+      if (b < 512n && T !== "blocks" || b >= 512n && T !== "seconds")
         throw new Error("invalid exitTimelock");
     }
-    const d = e.exitTimelock ?? {
-      value: a.unilateralExitDelay,
-      type: a.unilateralExitDelay < 512n ? "blocks" : "seconds"
+    const d = a.network === "bitcoin" ? AT : a.unilateralExitDelay, h = e.exitTimelock ?? {
+      value: d,
+      type: d < 512n ? "blocks" : "seconds"
     };
     if (e.boardingTimelock) {
-      const { value: w, type: b } = e.boardingTimelock;
-      if (w < 512n && b !== "blocks" || w >= 512n && b !== "seconds")
+      const { value: b, type: T } = e.boardingTimelock;
+      if (b < 512n && T !== "blocks" || b >= 512n && T !== "seconds")
         throw new Error("invalid boardingTimelock");
     }
-    const h = e.boardingTimelock ?? {
+    const p = e.boardingTimelock ?? {
       value: a.boardingExitDelay,
       type: a.boardingExitDelay < 512n ? "blocks" : "seconds"
-    }, p = P.decode(a.signerPubkey).slice(1), f = e.delegatorProvider ? await e.delegatorProvider.getDelegateInfo().then((w) => P.decode(w.pubkey).slice(1)) : void 0, g = {
+    }, f = P.decode(a.signerPubkey).slice(1), g = e.delegatorProvider ? await e.delegatorProvider.getDelegateInfo().then((b) => P.decode(b.pubkey).slice(1)) : void 0, y = {
       pubKey: r,
-      serverPubKey: p,
-      csvTimelock: d
-    }, y = f ? new Qs.Script({ ...g, delegatePubKey: f }) : new Wr.Script(g), m = new Wr.Script({
-      ...g,
+      serverPubKey: f,
       csvTimelock: h
-    }), E = e.storage?.walletRepository ?? new Ay(), v = e.storage?.contractRepository ?? new ky();
+    }, m = g ? new Qs.Script({ ...y, delegatePubKey: g }) : new Wr.Script(y), E = new Wr.Script({
+      ...y,
+      csvTimelock: p
+    }), v = e.storage?.walletRepository ?? new Ay(), w = e.storage?.contractRepository ?? new ky();
     return {
       arkProvider: n,
       indexerProvider: o,
       onchainProvider: l,
       network: c,
       networkName: a.network,
-      serverPubKey: p,
-      offchainTapscript: y,
-      boardingTapscript: m,
+      serverPubKey: f,
+      offchainTapscript: m,
+      boardingTapscript: E,
       dustAmount: a.dust,
-      walletRepository: E,
-      contractRepository: v,
+      walletRepository: v,
+      contractRepository: w,
       info: a,
       delegatorProvider: e.delegatorProvider
     };
@@ -23739,8 +23748,8 @@ class wi {
    * @param filter - Optional flags controlling whether recoverable or unrolled VTXOs are included
    */
   async getVtxos(e) {
-    const { isDelta: r, fetchedExtended: n, address: i } = await this.syncVtxos(), s = e ?? { withRecoverable: !0, withUnrolled: !1 };
-    return (r ? await this.walletRepository.getVtxos(i) : n).filter((a) => gn(a) ? !(!s.withRecoverable && (mr(a) || yc(a))) : !!(s.withUnrolled && a.isUnrolled));
+    const r = e ?? { withRecoverable: !0, withUnrolled: !1 };
+    return (await (await this.getContractManager()).getContractsWithVtxos()).flatMap(({ vtxos: s }) => s.filter((o) => gn(o) ? !(!r.withRecoverable && (mr(o) || yc(o))) : !!(r.withUnrolled && o.isUnrolled)));
   }
   /**
    * Return wallet transaction history derived from Arkade state and boarding transactions.
@@ -24045,7 +24054,6 @@ class wi {
       indexerProvider: this.indexerProvider,
       contractRepository: this.contractRepository,
       walletRepository: this.walletRepository,
-      getDefaultAddress: () => this.getAddress(),
       watcherConfig: this.watcherConfig
     }), r = this.offchainTapscript.options.csvTimelock ?? Wr.Script.DEFAULT_TIMELOCK, n = gi(r).toString();
     if (this.offchainTapscript instanceof Qs.Script) {
@@ -24197,7 +24205,7 @@ class cs extends wi {
    * ```
    */
   async toReadonly() {
-    const e = AT(this.identity) ? await this.identity.toReadonly() : this.identity;
+    const e = IT(this.identity) ? await this.identity.toReadonly() : this.identity;
     return new wi(e, this.network, this.onchainProvider, this.indexerProvider, this.arkServerPublicKey, this.offchainTapscript, this.boardingTapscript, this.dustAmount, this.walletRepository, this.contractRepository, this.delegatorProvider, this.watcherConfig);
   }
   /** Returns the delegator manager when delegation support is configured. */
@@ -24864,18 +24872,18 @@ function Vs(t, e) {
     changeAmount: s
   };
 }
-const IT = "MessageBus not initialized";
-class PT extends Error {
+const PT = "MessageBus not initialized";
+class _T extends Error {
   constructor() {
-    super(IT);
+    super(PT);
   }
 }
-class _T extends Error {
+class CT extends Error {
   constructor(e) {
     super(e);
   }
 }
-class CT {
+class BT {
   /** Create the service-worker message bus with repositories and handler configuration. */
   constructor(e, r, { messageHandlers: n, tickIntervalMs: i = 1e4, messageTimeoutMs: s = 3e4, debug: o = !1, buildServices: a }) {
     this.walletRepository = e, this.contractRepository = r, this.running = !1, this.tickTimeout = null, this.tickInProgress = !1, this.debug = !1, this.initialized = !1, this.boundOnMessage = this.onMessage.bind(this), this.handlers = new Map(n.map((c) => [c.messageTag, c])), this.tickIntervalMs = i, this.messageTimeoutMs = s, this.debug = o, this.buildServicesFn = a ?? this.buildServices.bind(this);
@@ -24981,7 +24989,7 @@ class CT {
       this.debug && console.warn("Event received before initialization, dropping", e.data), e.source?.postMessage({
         id: r,
         tag: n ?? "unknown",
-        error: new PT()
+        error: new _T()
       });
       return;
     }
@@ -25034,7 +25042,7 @@ class CT {
   withTimeout(e, r) {
     return this.messageTimeoutMs <= 0 ? e : new Promise((n, i) => {
       const s = self.setTimeout(() => {
-        i(new _T(`Message handler timed out after ${this.messageTimeoutMs}ms (${r})`));
+        i(new CT(`Message handler timed out after ${this.messageTimeoutMs}ms (${r})`));
       }, this.messageTimeoutMs);
       e.then((o) => {
         self.clearTimeout(s), n(o);
@@ -25069,7 +25077,7 @@ class qh extends Error {
     super("Wallet handler not initialized"), this.name = "WalletNotInitializedError";
   }
 }
-class BT extends Error {
+class OT extends Error {
   constructor() {
     super("Read-only wallet: operation requires signing"), this.name = "ReadonlyWalletError";
   }
@@ -25079,15 +25087,15 @@ class Gh extends Error {
     super("Delegator not configured"), this.name = "DelegatorNotConfiguredError";
   }
 }
-const OT = "WALLET_UPDATER";
-class RT {
+const RT = "WALLET_UPDATER";
+class $T {
   /**
    * Instantiate a new WalletUpdater.
    * Can override the default `messageTag` allowing more than one updater to run in parallel.
    * Note that the default ServiceWorkerWallet sends messages to the default WalletUpdater tag.
    */
   constructor(e) {
-    this.onNextTick = [], this.messageTag = e?.messageTag ?? OT;
+    this.onNextTick = [], this.messageTag = e?.messageTag ?? RT;
   }
   // lifecycle methods
   async start(...e) {
@@ -25111,7 +25119,7 @@ class RT {
   }
   requireWallet() {
     if (!this.wallet)
-      throw new BT();
+      throw new OT();
     return this.wallet;
   }
   tagged(e) {
@@ -25698,7 +25706,7 @@ var Xh;
     }
     if (a.type === "pkh")
       try {
-        return MT(n, ae.decode(i), a.hash);
+        return LT(n, ae.decode(i), a.hash);
       } catch {
         return !1;
       }
@@ -25711,14 +25719,14 @@ var Xh;
     if (u.length === 0)
       return !1;
     if (a.type === "tr")
-      return $T(n, u, c, a.pubkey);
+      return NT(n, u, c, a.pubkey);
     if (a.type === "wpkh")
-      return NT(n, u, c, a.hash);
+      return MT(n, u, c, a.hash);
     throw new Error(`BIP-322 verify: unsupported address type '${a.type}'`);
   }
   t.verify = r;
 })(Xh || (Xh = {}));
-function $T(t, e, r, n) {
+function NT(t, e, r, n) {
   if (e.length !== 1)
     return !1;
   const i = e[0];
@@ -25730,7 +25738,7 @@ function $T(t, e, r, n) {
   const o = wc(t, r, hf), c = _y(o, r, n).preimageWitnessV1(0, [r], s, [0n]), u = i.length === 65 ? i.subarray(0, 64) : i;
   return at.verify(u, c, n);
 }
-function NT(t, e, r, n) {
+function MT(t, e, r, n) {
   if (e.length !== 2)
     return !1;
   const i = e[0], s = e[1];
@@ -25739,19 +25747,19 @@ function NT(t, e, r, n) {
   const o = Cl(s);
   if (!Vn(o.hash, n))
     return !1;
-  const a = i[i.length - 1], c = i.subarray(0, i.length - 1), u = wc(t, r, hf), l = DT(u, r), d = we.encode({ type: "pkh", hash: n }), h = l.preimageWitnessV0(0, d, a, 0n);
+  const a = i[i.length - 1], c = i.subarray(0, i.length - 1), u = wc(t, r, hf), l = KT(u, r), d = we.encode({ type: "pkh", hash: n }), h = l.preimageWitnessV0(0, d, a, 0n);
   return He.verify(c, h, s, {
     prehash: !1,
     format: "der"
   });
 }
-function MT(t, e, r) {
+function LT(t, e, r) {
   if (e.length !== 65)
     return !1;
   const n = e[0];
   if (n < 27 || n > 34)
     return !1;
-  const i = n >= 31, s = i ? n - 31 : n - 27, o = e.subarray(1, 65), a = LT(t);
+  const i = n >= 31, s = i ? n - 31 : n - 27, o = e.subarray(1, 65), a = UT(t);
   try {
     const l = He.Signature.fromBytes(o, "compact").addRecoveryBit(s).recoverPublicKey(a).toBytes(i);
     return Vn(hs(l), r);
@@ -25759,12 +25767,12 @@ function MT(t, e, r) {
     return !1;
   }
 }
-function LT(t) {
+function UT(t) {
   const e = new TextEncoder().encode(`Bitcoin Signed Message:
 `), r = new TextEncoder().encode(t);
-  return un(kr(e, UT(r.length), r));
+  return un(kr(e, DT(r.length), r));
 }
-function UT(t) {
+function DT(t) {
   if (t < 253)
     return new Uint8Array([t]);
   if (t <= 65535) {
@@ -25791,7 +25799,7 @@ function _y(t, e, r) {
     script: Zl
   }), n;
 }
-function DT(t, e) {
+function KT(t, e) {
   const r = new Qe({ version: 0 });
   return r.addInput({
     txid: t.id,
@@ -25837,7 +25845,7 @@ var Yh;
               return {
                 type: e.WAIT,
                 txid: l.txid,
-                do: VT(this.explorer, l.txid)
+                do: FT(this.explorer, l.txid)
               };
           } catch {
             s = l;
@@ -25871,7 +25879,7 @@ var Yh;
       return {
         type: e.UNROLL,
         tx: c,
-        do: HT(this.bumper, this.explorer, c)
+        do: VT(this.bumper, this.explorer, c)
       };
     }
     /**
@@ -25881,7 +25889,7 @@ var Yh;
     async *[Symbol.asyncIterator]() {
       let s;
       do {
-        s !== void 0 && await KT(1e3);
+        s !== void 0 && await HT(1e3);
         const o = await this.next();
         await o.do(), yield o, s = o.type;
       } while (s !== e.DONE);
@@ -25902,7 +25910,7 @@ var Yh;
       const E = await i.onchainProvider.getTxStatus(m.txid);
       if (!E.confirmed)
         throw new Error(`tx ${m.txid} is not confirmed`);
-      const v = FT({ height: E.blockHeight, time: E.blockTime }, a, m);
+      const v = WT({ height: E.blockHeight, time: E.blockTime }, a, m);
       if (!v)
         throw new Error(`no available exit path found for vtxo ${m.txid}:${m.vout}`);
       const w = bt.decode(m.tapTree).findLeaf(P.encode(v.script));
@@ -25940,16 +25948,16 @@ var Yh;
   }
   t.completeUnroll = n;
 })(Yh || (Yh = {}));
-function KT(t) {
+function HT(t) {
   return new Promise((e) => setTimeout(e, t));
 }
-function HT(t, e, r) {
+function VT(t, e, r) {
   return async () => {
     const [n, i] = await t.bumpP2A(r);
     await e.broadcastTransaction(n, i);
   };
 }
-function VT(t, e) {
+function FT(t, e) {
   return () => new Promise((r, n) => {
     const i = setInterval(async () => {
       try {
@@ -25960,7 +25968,7 @@ function VT(t, e) {
     }, 5e3);
   });
 }
-function FT(t, e, r) {
+function WT(t, e, r) {
   const n = bt.decode(r.tapTree).exitPaths();
   for (const i of n)
     if (i.params.timelock.type === "blocks") {
@@ -25970,7 +25978,7 @@ function FT(t, e, r) {
       return i;
 }
 var gu = {}, Zh;
-function WT() {
+function zT() {
   return Zh || (Zh = 1, (function(t) {
     /*! scure-base - MIT License (c) 2022 Paul Miller (paulmillr.com) */
     Object.defineProperty(t, "__esModule", { value: !0 }), t.bytes = t.stringToBytes = t.str = t.bytesToString = t.hex = t.utf8 = t.bech32m = t.bech32 = t.base58check = t.base58xmr = t.base58xrp = t.base58flickr = t.base58 = t.base64url = t.base64 = t.base32crockford = t.base32hex = t.base32 = t.base16 = t.utils = t.assertNumber = void 0;
@@ -26313,10 +26321,10 @@ function WT() {
   })(gu)), gu;
 }
 var wu, Qh;
-function zT() {
+function jT() {
   if (Qh) return wu;
   Qh = 1;
-  const { bech32: t, hex: e, utf8: r } = WT(), n = {
+  const { bech32: t, hex: e, utf8: r } = zT(), n = {
     // default network is bitcoin
     bech32: "bc",
     pubKeyHash: 0,
@@ -26583,8 +26591,8 @@ function zT() {
     hrpToMillisat: v
   }, wu;
 }
-var jT = zT();
-const qT = /* @__PURE__ */ Pw(jT);
+var qT = jT();
+const GT = /* @__PURE__ */ Pw(qT);
 var pe = class extends Error {
   /** Whether the swap can still be claimed (default: false). */
   isClaimable;
@@ -26595,11 +26603,11 @@ var pe = class extends Error {
   constructor(t = {}) {
     super(t.message ?? "Error during swap."), this.name = "SwapError", this.isClaimable = t.isClaimable ?? !1, this.isRefundable = t.isRefundable ?? !1, this.pendingSwap = t.pendingSwap;
   }
-}, GT = class extends pe {
+}, XT = class extends pe {
   constructor(t = {}) {
     super({ message: "The invoice has expired.", ...t }), this.name = "InvoiceExpiredError";
   }
-}, XT = class extends pe {
+}, YT = class extends pe {
   constructor(t = {}) {
     super({
       message: "The provider failed to pay the invoice",
@@ -26626,7 +26634,7 @@ var pe = class extends Error {
   constructor(t = {}) {
     super({ message: "The transaction has failed.", ...t }), this.name = "TransactionFailedError";
   }
-}, YT = class extends pe {
+}, ZT = class extends pe {
   constructor(t = {}) {
     super({ message: "The transaction lockup has failed.", ...t }), this.name = "TransactionLockupFailedError";
   }
@@ -26662,9 +26670,9 @@ var pe = class extends Error {
   "transaction.claimed",
   // normal status for completed swaps
   "swap.expired"
-].includes(t), rp = (t) => ["swap.expired"].includes(t), np = (t) => ["transaction.claim.pending"].includes(t), Mi = (t) => t.type === "reverse", Li = (t) => t.type === "submarine", ii = (t) => t.type === "chain", xc = (t) => t && typeof t == "object" && typeof t.refund == "number" && typeof t.unilateralClaim == "number" && typeof t.unilateralRefund == "number" && typeof t.unilateralRefundWithoutReceiver == "number", ZT = (t) => t && typeof t == "object" && typeof t.id == "string" && typeof t.timeoutBlockHeight == "number", QT = (t) => t && typeof t == "object" && typeof t.status == "string" && (t.zeroConfRejected === void 0 || typeof t.zeroConfRejected == "boolean") && (t.transaction === void 0 || t.transaction && typeof t.transaction == "object" && typeof t.transaction.id == "string" && (t.transaction.confirmed === void 0 || typeof t.transaction.confirmed == "boolean") && (t.transaction.eta === void 0 || typeof t.transaction.eta == "number") && (t.transaction.hex === void 0 || typeof t.transaction.hex == "string") && (t.transaction.preimage === void 0 || typeof t.transaction.preimage == "string")), ip = (t) => t && typeof t == "object" && t.ARK && typeof t.ARK == "object" && t.ARK.BTC && typeof t.ARK.BTC == "object" && typeof t.ARK.BTC.hash == "string" && typeof t.ARK.BTC.rate == "number" && t.ARK.BTC.limits && typeof t.ARK.BTC.limits == "object" && typeof t.ARK.BTC.limits.maximal == "number" && typeof t.ARK.BTC.limits.minimal == "number" && typeof t.ARK.BTC.limits.maximalZeroConf == "number" && t.ARK.BTC.fees && typeof t.ARK.BTC.fees == "object" && typeof t.ARK.BTC.fees.percentage == "number" && typeof t.ARK.BTC.fees.minerFees == "number", JT = (t) => t && typeof t == "object" && t.BTC && typeof t.BTC == "object" && t.BTC.ARK && typeof t.BTC.ARK == "object" && t.BTC.ARK.hash && typeof t.BTC.ARK.hash == "string" && typeof t.BTC.ARK.rate == "number" && t.BTC.ARK.limits && typeof t.BTC.ARK.limits == "object" && typeof t.BTC.ARK.limits.maximal == "number" && typeof t.BTC.ARK.limits.minimal == "number" && t.BTC.ARK.fees && typeof t.BTC.ARK.fees == "object" && typeof t.BTC.ARK.fees.percentage == "number" && typeof t.BTC.ARK.fees.minerFees == "object" && typeof t.BTC.ARK.fees.minerFees.claim == "number" && typeof t.BTC.ARK.fees.minerFees.lockup == "number", ek = (t) => t && typeof t == "object" && typeof t.id == "string" && typeof t.expectedAmount == "number" && (t.address === void 0 || typeof t.address == "string") && (t.claimPublicKey === void 0 || typeof t.claimPublicKey == "string") && (t.acceptZeroConf === void 0 || typeof t.acceptZeroConf == "boolean") && (t.timeoutBlockHeight === void 0 || typeof t.timeoutBlockHeight == "number") && (t.timeoutBlockHeights === void 0 || xc(t.timeoutBlockHeights)), tk = (t) => t && typeof t == "object" && typeof t.preimage == "string", rk = (t) => t && typeof t == "object" && typeof t.id == "string" && typeof t.invoice == "string" && (t.onchainAmount === void 0 || typeof t.onchainAmount == "number") && (t.lockupAddress === void 0 || typeof t.lockupAddress == "string") && (t.refundPublicKey === void 0 || typeof t.refundPublicKey == "string") && (t.timeoutBlockHeight === void 0 || typeof t.timeoutBlockHeight == "number") && (t.timeoutBlockHeights === void 0 || xc(t.timeoutBlockHeights)), nk = (t) => t && typeof t == "object" && typeof t.transaction == "string" && typeof t.checkpoint == "string", ik = (t) => t && typeof t == "object" && typeof t.transaction == "string" && typeof t.checkpoint == "string", sp = (t) => t && typeof t == "object" && t.ARK && t.BTC && typeof t.ARK == "object" && typeof t.BTC == "object" && t.ARK.BTC && t.BTC.ARK && typeof t.ARK.BTC == "object" && typeof t.BTC.ARK == "object" && typeof t.ARK.BTC.hash == "string" && typeof t.BTC.ARK.hash == "string" && typeof t.ARK.BTC.rate == "number" && typeof t.BTC.ARK.rate == "number" && t.ARK.BTC.limits && t.BTC.ARK.limits && typeof t.ARK.BTC.limits == "object" && typeof t.BTC.ARK.limits == "object" && typeof t.ARK.BTC.limits.maximal == "number" && typeof t.BTC.ARK.limits.maximal == "number" && typeof t.ARK.BTC.limits.minimal == "number" && typeof t.BTC.ARK.limits.minimal == "number" && typeof t.ARK.BTC.limits.maximalZeroConf == "number" && typeof t.BTC.ARK.limits.maximalZeroConf == "number" && t.ARK.BTC.fees && t.BTC.ARK.fees && typeof t.ARK.BTC.fees == "object" && typeof t.BTC.ARK.fees == "object" && typeof t.ARK.BTC.fees.percentage == "number" && typeof t.BTC.ARK.fees.percentage == "number" && typeof t.ARK.BTC.fees.minerFees == "object" && typeof t.BTC.ARK.fees.minerFees == "object" && typeof t.ARK.BTC.fees.minerFees.server == "number" && typeof t.BTC.ARK.fees.minerFees.server == "number" && t.ARK.BTC.fees.minerFees.user && t.BTC.ARK.fees.minerFees.user && typeof t.ARK.BTC.fees.minerFees.user == "object" && typeof t.BTC.ARK.fees.minerFees.user == "object" && typeof t.ARK.BTC.fees.minerFees.user.claim == "number" && typeof t.BTC.ARK.fees.minerFees.user.claim == "number" && typeof t.ARK.BTC.fees.minerFees.user.lockup == "number" && typeof t.BTC.ARK.fees.minerFees.user.lockup == "number", sk = (t) => t && typeof t == "object" && typeof t.claimLeaf == "object" && typeof t.claimLeaf.version == "number" && typeof t.claimLeaf.output == "string" && typeof t.refundLeaf == "object" && typeof t.refundLeaf.version == "number" && typeof t.refundLeaf.output == "string", op = (t) => t && typeof t == "object" && typeof t.amount == "number" && typeof t.lockupAddress == "string" && typeof t.serverPublicKey == "string" && typeof t.timeoutBlockHeight == "number" && (t.swapTree === void 0 || sk(t.swapTree)) && (t.timeouts === void 0 || xc(t.timeouts)) && (t.bip21 === void 0 || typeof t.bip21 == "string"), ok = (t) => t && typeof t == "object" && typeof t.id == "string" && op(t.claimDetails) && op(t.lockupDetails), ak = (t) => t && typeof t == "object" && typeof t.pubNonce == "string" && typeof t.publicKey == "string" && typeof t.transactionHash == "string", ck = (t) => t && typeof t == "object" && (typeof t.pubNonce == "string" && typeof t.partialSignature == "string" || typeof t.pubNonce > "u" && typeof t.partialSignature > "u"), uk = (t) => t && typeof t == "object" && typeof t.amount == "number", lk = (t) => t && typeof t == "object" && Object.keys(t).length === 0 && t.constructor === Object, fk = (t) => t && typeof t == "object" && typeof t.id == "string", ri = (t) => t && typeof t == "object" && typeof t.version == "number" && typeof t.output == "string", dk = (t) => t && typeof t == "object" && ri(t.claimLeaf) && ri(t.refundLeaf) && (t.covenantClaimLeaf === void 0 || ri(t.covenantClaimLeaf)) && (t.refundWithoutBoltzLeaf === void 0 || ri(t.refundWithoutBoltzLeaf)) && (t.unilateralClaimLeaf === void 0 || ri(t.unilateralClaimLeaf)) && (t.unilateralRefundLeaf === void 0 || ri(t.unilateralRefundLeaf)) && (t.unilateralRefundWithoutBoltzLeaf === void 0 || ri(t.unilateralRefundWithoutBoltzLeaf)), qa = (t) => t && typeof t == "object" && dk(t.tree) && (t.amount === void 0 || typeof t.amount == "number") && typeof t.keyIndex == "number" && (t.transaction === void 0 || t.transaction && typeof t.transaction == "object" && typeof t.transaction.id == "string" && typeof t.transaction.vout == "number") && typeof t.lockupAddress == "string" && typeof t.serverPublicKey == "string" && (t.timeoutBlockHeight === void 0 || typeof t.timeoutBlockHeight == "number") && (t.timeoutBlockHeights === void 0 || xc(t.timeoutBlockHeights)) && (t.preimageHash === void 0 || typeof t.preimageHash == "string"), Ry = (t) => t && typeof t == "object" && typeof t.id == "string" && t.type === "chain" && typeof t.status == "string" && typeof t.createdAt == "number" && (t.from === "ARK" || t.from === "BTC") && (t.to === "ARK" || t.to === "BTC") && (t.preimageHash === void 0 || typeof t.preimageHash == "string") && (t.invoice === void 0 || typeof t.invoice == "string") && (t.refundDetails === void 0 || qa(t.refundDetails)) && (t.claimDetails === void 0 || qa(t.claimDetails)), $y = (t) => t && typeof t == "object" && t.to === "BTC" && typeof t.id == "string" && t.from === "ARK" && t.type === "submarine" && typeof t.createdAt == "number" && (t.preimageHash === void 0 || typeof t.preimageHash == "string") && typeof t.status == "string" && qa(t.refundDetails) && (t.invoice === void 0 || typeof t.invoice == "string"), Ny = (t) => t && typeof t == "object" && t.to === "ARK" && typeof t.id == "string" && t.from === "BTC" && t.type === "reverse" && typeof t.createdAt == "number" && (t.preimageHash === void 0 || typeof t.preimageHash == "string") && typeof t.status == "string" && qa(t.claimDetails) && (t.invoice === void 0 || typeof t.invoice == "string"), hk = (t) => Array.isArray(t) && t.every(
+].includes(t), rp = (t) => ["swap.expired"].includes(t), np = (t) => ["transaction.claim.pending"].includes(t), Mi = (t) => t.type === "reverse", Li = (t) => t.type === "submarine", ii = (t) => t.type === "chain", xc = (t) => t && typeof t == "object" && typeof t.refund == "number" && typeof t.unilateralClaim == "number" && typeof t.unilateralRefund == "number" && typeof t.unilateralRefundWithoutReceiver == "number", QT = (t) => t && typeof t == "object" && typeof t.id == "string" && typeof t.timeoutBlockHeight == "number", JT = (t) => t && typeof t == "object" && typeof t.status == "string" && (t.zeroConfRejected === void 0 || typeof t.zeroConfRejected == "boolean") && (t.transaction === void 0 || t.transaction && typeof t.transaction == "object" && typeof t.transaction.id == "string" && (t.transaction.confirmed === void 0 || typeof t.transaction.confirmed == "boolean") && (t.transaction.eta === void 0 || typeof t.transaction.eta == "number") && (t.transaction.hex === void 0 || typeof t.transaction.hex == "string") && (t.transaction.preimage === void 0 || typeof t.transaction.preimage == "string")), ip = (t) => t && typeof t == "object" && t.ARK && typeof t.ARK == "object" && t.ARK.BTC && typeof t.ARK.BTC == "object" && typeof t.ARK.BTC.hash == "string" && typeof t.ARK.BTC.rate == "number" && t.ARK.BTC.limits && typeof t.ARK.BTC.limits == "object" && typeof t.ARK.BTC.limits.maximal == "number" && typeof t.ARK.BTC.limits.minimal == "number" && typeof t.ARK.BTC.limits.maximalZeroConf == "number" && t.ARK.BTC.fees && typeof t.ARK.BTC.fees == "object" && typeof t.ARK.BTC.fees.percentage == "number" && typeof t.ARK.BTC.fees.minerFees == "number", ek = (t) => t && typeof t == "object" && t.BTC && typeof t.BTC == "object" && t.BTC.ARK && typeof t.BTC.ARK == "object" && t.BTC.ARK.hash && typeof t.BTC.ARK.hash == "string" && typeof t.BTC.ARK.rate == "number" && t.BTC.ARK.limits && typeof t.BTC.ARK.limits == "object" && typeof t.BTC.ARK.limits.maximal == "number" && typeof t.BTC.ARK.limits.minimal == "number" && t.BTC.ARK.fees && typeof t.BTC.ARK.fees == "object" && typeof t.BTC.ARK.fees.percentage == "number" && typeof t.BTC.ARK.fees.minerFees == "object" && typeof t.BTC.ARK.fees.minerFees.claim == "number" && typeof t.BTC.ARK.fees.minerFees.lockup == "number", tk = (t) => t && typeof t == "object" && typeof t.id == "string" && typeof t.expectedAmount == "number" && (t.address === void 0 || typeof t.address == "string") && (t.claimPublicKey === void 0 || typeof t.claimPublicKey == "string") && (t.acceptZeroConf === void 0 || typeof t.acceptZeroConf == "boolean") && (t.timeoutBlockHeight === void 0 || typeof t.timeoutBlockHeight == "number") && (t.timeoutBlockHeights === void 0 || xc(t.timeoutBlockHeights)), rk = (t) => t && typeof t == "object" && typeof t.preimage == "string", nk = (t) => t && typeof t == "object" && typeof t.id == "string" && typeof t.invoice == "string" && (t.onchainAmount === void 0 || typeof t.onchainAmount == "number") && (t.lockupAddress === void 0 || typeof t.lockupAddress == "string") && (t.refundPublicKey === void 0 || typeof t.refundPublicKey == "string") && (t.timeoutBlockHeight === void 0 || typeof t.timeoutBlockHeight == "number") && (t.timeoutBlockHeights === void 0 || xc(t.timeoutBlockHeights)), ik = (t) => t && typeof t == "object" && typeof t.transaction == "string" && typeof t.checkpoint == "string", sk = (t) => t && typeof t == "object" && typeof t.transaction == "string" && typeof t.checkpoint == "string", sp = (t) => t && typeof t == "object" && t.ARK && t.BTC && typeof t.ARK == "object" && typeof t.BTC == "object" && t.ARK.BTC && t.BTC.ARK && typeof t.ARK.BTC == "object" && typeof t.BTC.ARK == "object" && typeof t.ARK.BTC.hash == "string" && typeof t.BTC.ARK.hash == "string" && typeof t.ARK.BTC.rate == "number" && typeof t.BTC.ARK.rate == "number" && t.ARK.BTC.limits && t.BTC.ARK.limits && typeof t.ARK.BTC.limits == "object" && typeof t.BTC.ARK.limits == "object" && typeof t.ARK.BTC.limits.maximal == "number" && typeof t.BTC.ARK.limits.maximal == "number" && typeof t.ARK.BTC.limits.minimal == "number" && typeof t.BTC.ARK.limits.minimal == "number" && typeof t.ARK.BTC.limits.maximalZeroConf == "number" && typeof t.BTC.ARK.limits.maximalZeroConf == "number" && t.ARK.BTC.fees && t.BTC.ARK.fees && typeof t.ARK.BTC.fees == "object" && typeof t.BTC.ARK.fees == "object" && typeof t.ARK.BTC.fees.percentage == "number" && typeof t.BTC.ARK.fees.percentage == "number" && typeof t.ARK.BTC.fees.minerFees == "object" && typeof t.BTC.ARK.fees.minerFees == "object" && typeof t.ARK.BTC.fees.minerFees.server == "number" && typeof t.BTC.ARK.fees.minerFees.server == "number" && t.ARK.BTC.fees.minerFees.user && t.BTC.ARK.fees.minerFees.user && typeof t.ARK.BTC.fees.minerFees.user == "object" && typeof t.BTC.ARK.fees.minerFees.user == "object" && typeof t.ARK.BTC.fees.minerFees.user.claim == "number" && typeof t.BTC.ARK.fees.minerFees.user.claim == "number" && typeof t.ARK.BTC.fees.minerFees.user.lockup == "number" && typeof t.BTC.ARK.fees.minerFees.user.lockup == "number", ok = (t) => t && typeof t == "object" && typeof t.claimLeaf == "object" && typeof t.claimLeaf.version == "number" && typeof t.claimLeaf.output == "string" && typeof t.refundLeaf == "object" && typeof t.refundLeaf.version == "number" && typeof t.refundLeaf.output == "string", op = (t) => t && typeof t == "object" && typeof t.amount == "number" && typeof t.lockupAddress == "string" && typeof t.serverPublicKey == "string" && typeof t.timeoutBlockHeight == "number" && (t.swapTree === void 0 || ok(t.swapTree)) && (t.timeouts === void 0 || xc(t.timeouts)) && (t.bip21 === void 0 || typeof t.bip21 == "string"), ak = (t) => t && typeof t == "object" && typeof t.id == "string" && op(t.claimDetails) && op(t.lockupDetails), ck = (t) => t && typeof t == "object" && typeof t.pubNonce == "string" && typeof t.publicKey == "string" && typeof t.transactionHash == "string", uk = (t) => t && typeof t == "object" && (typeof t.pubNonce == "string" && typeof t.partialSignature == "string" || typeof t.pubNonce > "u" && typeof t.partialSignature > "u"), lk = (t) => t && typeof t == "object" && typeof t.amount == "number", fk = (t) => t && typeof t == "object" && Object.keys(t).length === 0 && t.constructor === Object, dk = (t) => t && typeof t == "object" && typeof t.id == "string", ri = (t) => t && typeof t == "object" && typeof t.version == "number" && typeof t.output == "string", hk = (t) => t && typeof t == "object" && ri(t.claimLeaf) && ri(t.refundLeaf) && (t.covenantClaimLeaf === void 0 || ri(t.covenantClaimLeaf)) && (t.refundWithoutBoltzLeaf === void 0 || ri(t.refundWithoutBoltzLeaf)) && (t.unilateralClaimLeaf === void 0 || ri(t.unilateralClaimLeaf)) && (t.unilateralRefundLeaf === void 0 || ri(t.unilateralRefundLeaf)) && (t.unilateralRefundWithoutBoltzLeaf === void 0 || ri(t.unilateralRefundWithoutBoltzLeaf)), qa = (t) => t && typeof t == "object" && hk(t.tree) && (t.amount === void 0 || typeof t.amount == "number") && typeof t.keyIndex == "number" && (t.transaction === void 0 || t.transaction && typeof t.transaction == "object" && typeof t.transaction.id == "string" && typeof t.transaction.vout == "number") && typeof t.lockupAddress == "string" && typeof t.serverPublicKey == "string" && (t.timeoutBlockHeight === void 0 || typeof t.timeoutBlockHeight == "number") && (t.timeoutBlockHeights === void 0 || xc(t.timeoutBlockHeights)) && (t.preimageHash === void 0 || typeof t.preimageHash == "string"), Ry = (t) => t && typeof t == "object" && typeof t.id == "string" && t.type === "chain" && typeof t.status == "string" && typeof t.createdAt == "number" && (t.from === "ARK" || t.from === "BTC") && (t.to === "ARK" || t.to === "BTC") && (t.preimageHash === void 0 || typeof t.preimageHash == "string") && (t.invoice === void 0 || typeof t.invoice == "string") && (t.refundDetails === void 0 || qa(t.refundDetails)) && (t.claimDetails === void 0 || qa(t.claimDetails)), $y = (t) => t && typeof t == "object" && t.to === "BTC" && typeof t.id == "string" && t.from === "ARK" && t.type === "submarine" && typeof t.createdAt == "number" && (t.preimageHash === void 0 || typeof t.preimageHash == "string") && typeof t.status == "string" && qa(t.refundDetails) && (t.invoice === void 0 || typeof t.invoice == "string"), Ny = (t) => t && typeof t == "object" && t.to === "ARK" && typeof t.id == "string" && t.from === "BTC" && t.type === "reverse" && typeof t.createdAt == "number" && (t.preimageHash === void 0 || typeof t.preimageHash == "string") && typeof t.status == "string" && qa(t.claimDetails) && (t.invoice === void 0 || typeof t.invoice == "string"), pk = (t) => Array.isArray(t) && t.every(
   (e) => Ry(e) || Ny(e) || $y(e)
-), pk = {
+), gk = {
   bitcoin: "https://api.ark.boltz.exchange",
   mutinynet: "https://api.boltz.mutinynet.arkade.sh",
   regtest: "http://localhost:9069"
@@ -26677,7 +26685,7 @@ var pe = class extends Error {
   /** @param config Provider configuration with network and optional API URL. */
   constructor(t) {
     this.network = t.network, this.referralId = t.referralId;
-    const e = t.apiUrl || pk[t.network];
+    const e = t.apiUrl || gk[t.network];
     if (!e)
       throw new Error(
         `API URL is required for network: ${t.network}`
@@ -26707,7 +26715,7 @@ var pe = class extends Error {
     ]);
     if (!ip(t))
       throw new Ye({ message: "error fetching submarine fees" });
-    if (!JT(e))
+    if (!ek(e))
       throw new Ye({ message: "error fetching reverse fees" });
     return {
       submarine: {
@@ -26751,7 +26759,7 @@ var pe = class extends Error {
       `/v2/swap/reverse/${t}/transaction`,
       "GET"
     );
-    if (!ZT(e))
+    if (!QT(e))
       throw new Ye({
         message: `error fetching txid for swap: ${t}`
       });
@@ -26763,7 +26771,7 @@ var pe = class extends Error {
       `/v2/swap/${t}`,
       "GET"
     );
-    if (!QT(e))
+    if (!JT(e))
       throw new Ye({
         message: `error fetching status for swap: ${t}`
       });
@@ -26775,7 +26783,7 @@ var pe = class extends Error {
       `/v2/swap/submarine/${t}/preimage`,
       "GET"
     );
-    if (!tk(e))
+    if (!rk(e))
       throw new Ye({
         message: `error fetching preimage for swap: ${t}`
       });
@@ -26801,7 +26809,7 @@ var pe = class extends Error {
       "POST",
       r
     );
-    if (!ek(n))
+    if (!tk(n))
       throw new Ye({ message: "Error creating submarine swap" });
     return n;
   }
@@ -26829,7 +26837,7 @@ var pe = class extends Error {
       "POST",
       i
     );
-    if (!rk(s))
+    if (!nk(s))
       throw new Ye({ message: "Error creating reverse swap" });
     return s;
   }
@@ -26885,7 +26893,7 @@ var pe = class extends Error {
       "POST",
       c
     );
-    if (!ok(u))
+    if (!ak(u))
       throw new Ye({ message: "Error creating chain swap" });
     return u;
   }
@@ -26899,7 +26907,7 @@ var pe = class extends Error {
       "POST",
       n
     );
-    if (!nk(i))
+    if (!ik(i))
       throw new Ye({
         message: "Error refunding submarine swap"
       });
@@ -26922,7 +26930,7 @@ var pe = class extends Error {
       "POST",
       n
     );
-    if (!ik(i))
+    if (!sk(i))
       throw new Ye({
         message: "Error refunding chain swap"
       });
@@ -27030,7 +27038,7 @@ var pe = class extends Error {
       `/v2/swap/chain/${t}/claim`,
       "GET"
     );
-    if (!ak(e))
+    if (!ck(e))
       throw new Ye({
         message: `error fetching claim details for swap: ${t}`
       });
@@ -27042,7 +27050,7 @@ var pe = class extends Error {
       `/v2/swap/chain/${t}/quote`,
       "GET"
     );
-    if (!uk(e))
+    if (!lk(e))
       throw new Ye({
         message: `error fetching quote for swap: ${t}`
       });
@@ -27055,7 +27063,7 @@ var pe = class extends Error {
       "POST",
       e
     );
-    if (!lk(r))
+    if (!fk(r))
       throw new Ye({
         message: `error posting quote for swap: ${t}`
       });
@@ -27068,7 +27076,7 @@ var pe = class extends Error {
       "POST",
       e
     );
-    if (!fk(r))
+    if (!dk(r))
       throw new Ye({
         message: "error posting BTC transaction"
       });
@@ -27081,7 +27089,7 @@ var pe = class extends Error {
       "POST",
       e
     );
-    if (!ck(r))
+    if (!uk(r))
       throw new Ye({
         message: `error posting claim details for swap: ${t}`
       });
@@ -27096,7 +27104,7 @@ var pe = class extends Error {
       "POST",
       e
     );
-    if (!hk(r))
+    if (!pk(r))
       throw new Ye({
         message: "Invalid schema in response for swap restoration"
       });
@@ -27141,7 +27149,7 @@ var pe = class extends Error {
     }
   }
 }, pf = (t) => {
-  const e = qT.decode(t), r = Number(
+  const e = GT.decode(t), r = Number(
     e.sections.find((n) => n.name === "amount")?.value ?? "0"
   );
   return {
@@ -27150,7 +27158,7 @@ var pe = class extends Error {
     description: e.sections.find((n) => n.name === "description")?.value ?? "",
     paymentHash: e.sections.find((n) => n.name === "payment_hash")?.value ?? ""
   };
-}, gk = (t) => pf(t).paymentHash, Fi = (t, e, r, n) => {
+}, wk = (t) => pf(t).paymentHash, Fi = (t, e, r, n) => {
   try {
     Qv(t, e, r);
     const i = t.getInput(e), s = P.encode(n);
@@ -27171,7 +27179,7 @@ var pe = class extends Error {
       `Invalid ${e} key length: ${n.length} ${r ? "for swap " + r : ""}`
     );
   return n;
-}, se = console, wk = class {
+}, se = console, yk = class {
   swapProvider;
   config;
   // Event listeners storage (supports multiple listeners per event)
@@ -27823,7 +27831,7 @@ var pe = class extends Error {
     };
   }
 };
-async function yk(t, e) {
+async function mk(t, e) {
   Mi(t) ? e.saveReverseSwap ? await e.saveReverseSwap(t) : console.warn("No saveReverseSwap handler provided, swap not saved") : Li(t) ? e.saveSubmarineSwap ? await e.saveSubmarineSwap(t) : console.warn(
     "No saveSubmarineSwap handler provided, swap not saved"
   ) : ii(t) && (e.saveChainSwap ? await e.saveChainSwap(t) : console.warn("No saveChainSwap handler provided, swap not saved"));
@@ -27842,7 +27850,7 @@ async function jo(t, e, r, n) {
     ...n
   });
 }
-function mk(t, e) {
+function bk(t, e) {
   const r = P.encode(Ne(P.decode(e)));
   if (r !== t.request.preimageHash)
     throw new Error(
@@ -27850,7 +27858,7 @@ function mk(t, e) {
     );
   return t.preimage = e, t;
 }
-function bk(t, e) {
+function Ek(t, e) {
   let r;
   try {
     const n = pf(e);
@@ -27866,8 +27874,8 @@ function bk(t, e) {
     );
   return t.request.invoice = e, t;
 }
-var Ek = "arkade-boltz-swap", Sk = 2, Fr = "swaps";
-function vk(t) {
+var Sk = "arkade-boltz-swap", vk = 2, Fr = "swaps";
+function xk(t) {
   if (!t.objectStoreNames.contains(Fr)) {
     const e = t.createObjectStore(Fr, {
       keyPath: "id"
@@ -27876,13 +27884,13 @@ function vk(t) {
   }
 }
 var Ly = class {
-  constructor(t = Ek) {
+  constructor(t = Sk) {
     this.dbName = t;
   }
   version = 1;
   db = null;
   async getDB() {
-    return this.db ? this.db : (this.db = await uf(this.dbName, Sk, vk), this.db);
+    return this.db ? this.db : (this.db = await uf(this.dbName, vk, xk), this.db);
   }
   async saveSwap(t) {
     const e = await this.getDB();
@@ -27936,7 +27944,7 @@ var Ly = class {
         const a = r.getAll();
         a.onsuccess = () => s(a.result ?? []), a.onerror = () => o(a.error);
       });
-    const n = Tk(t);
+    const n = kk(t);
     if (n.has("id")) {
       const s = n.get("id"), o = await Promise.all(
         s.map(
@@ -28009,10 +28017,10 @@ var Ly = class {
   async [Symbol.asyncDispose]() {
     this.db && (await lf(this.dbName), this.db = null);
   }
-}, xk = ["id", "status", "type"];
-function Tk(t) {
+}, Tk = ["id", "status", "type"];
+function kk(t) {
   const e = /* @__PURE__ */ new Map();
-  return xk.forEach((r) => {
+  return Tk.forEach((r) => {
     t?.[r] && (Array.isArray(t[r]) ? e.set(r, t[r]) : e.set(r, [t[r]]));
   }), e;
 }
@@ -28027,7 +28035,7 @@ var Uy = (t, e) => t.findIndex((r) => Be(e, r)), Dy = (t) => {
   }
 }, Ky = (t, e) => (Dy([...t]), L0(
   Ia([...t], e ? [e] : [], e ? [!0] : [])
-)), kk = class Hy {
+)), Ak = class Hy {
   constructor(e, r, n, i, s, o, a) {
     this.privateKey = e, this.myPublicKey = r, this.publicKeys = n, this.myIndex = i, this.aggPubkey = s, this.internalKey = o, this._tweak = a;
   }
@@ -28044,7 +28052,7 @@ var Uy = (t, e) => t.findIndex((r) => Be(e, r)), Dy = (t) => {
     );
   }
   message(e) {
-    return new Ak(
+    return new Ik(
       this.privateKey,
       this.myPublicKey,
       this.publicKeys,
@@ -28054,7 +28062,7 @@ var Uy = (t, e) => t.findIndex((r) => Be(e, r)), Dy = (t) => {
       e
     );
   }
-}, Ak = class {
+}, Ik = class {
   constructor(t, e, r, n, i, s, o) {
     this.privateKey = t, this.myPublicKey = e, this.publicKeys = r, this.myIndex = n, this.aggPubkey = i, this.tweak = s, this.msg = o;
   }
@@ -28065,7 +28073,7 @@ var Uy = (t, e) => t.findIndex((r) => Be(e, r)), Dy = (t) => {
       this.aggPubkey,
       this.msg
     );
-    return new Ik(
+    return new Pk(
       this.privateKey,
       this.myPublicKey,
       this.publicKeys,
@@ -28076,7 +28084,7 @@ var Uy = (t, e) => t.findIndex((r) => Be(e, r)), Dy = (t) => {
       t
     );
   }
-}, Ik = class {
+}, Pk = class {
   constructor(t, e, r, n, i, s, o, a) {
     this.privateKey = t, this.myPublicKey = e, this.publicKeys = r, this.myIndex = n, this.aggPubkey = i, this.tweak = s, this.msg = o, this.nonce = a;
   }
@@ -28101,7 +28109,7 @@ var Uy = (t, e) => t.findIndex((r) => Be(e, r)), Dy = (t) => {
       i.push(a);
     }
     const s = Zg([...i]);
-    return new Pk(
+    return new _k(
       this.privateKey,
       this.myPublicKey,
       this.publicKeys,
@@ -28114,7 +28122,7 @@ var Uy = (t, e) => t.findIndex((r) => Be(e, r)), Dy = (t) => {
       s
     );
   }
-}, Pk = class {
+}, _k = class {
   constructor(t, e, r, n, i, s, o, a, c, u) {
     this.privateKey = t, this.myPublicKey = e, this.publicKeys = r, this.myIndex = n, this.aggPubkey = i, this.tweak = s, this.msg = o, this.nonce = a, this.pubNonces = c, this.aggregatedNonce = u;
   }
@@ -28129,7 +28137,7 @@ var Uy = (t, e) => t.findIndex((r) => Be(e, r)), Dy = (t) => {
       this.tweak ? [this.tweak] : [],
       this.tweak ? [!0] : []
     );
-    return new _k(
+    return new Ck(
       this.privateKey,
       this.publicKeys,
       this.myIndex,
@@ -28138,7 +28146,7 @@ var Uy = (t, e) => t.findIndex((r) => Be(e, r)), Dy = (t) => {
       t
     );
   }
-}, _k = class {
+}, Ck = class {
   constructor(t, e, r, n, i, s) {
     this.privateKey = t, this.publicKeys = e, this.myIndex = r, this.nonce = n, this.pubNonces = i, this.session = s, this.partialSignatures = Array(e.length).fill(null);
   }
@@ -28160,14 +28168,14 @@ var Uy = (t, e) => t.findIndex((r) => Be(e, r)), Dy = (t) => {
   }
   signPartial() {
     const t = this.session.sign(this.nonce.secret, this.privateKey, !0);
-    return this.partialSignatures[this.myIndex] = t, new Ck(
+    return this.partialSignatures[this.myIndex] = t, new Bk(
       this.session,
       [...this.partialSignatures],
       t,
       this.nonce.public
     );
   }
-}, Ck = class {
+}, Bk = class {
   constructor(t, e, r, n) {
     this.session = t, this.partialSignatures = e, this.ourPartialSignature = r, this.publicNonce = n;
   }
@@ -28186,7 +28194,7 @@ var Uy = (t, e) => t.findIndex((r) => Be(e, r)), Dy = (t) => {
   const n = He.getPublicKey(t), i = Uy(r, n);
   if (i === -1) throw new Error("our key is not in publicKeys");
   const s = Ky(r);
-  return new kk(
+  return new Ak(
     t,
     n,
     r,
@@ -28194,18 +28202,18 @@ var Uy = (t, e) => t.findIndex((r) => Be(e, r)), Dy = (t) => {
     s,
     s
   );
-}, Bk = {
+}, Ok = {
   bech32: "bcrt",
   pubKeyHash: 111,
   scriptHash: 196
-}, Ok = {
+}, Rk = {
   bech32: "tb",
   pubKeyHash: 111,
   scriptHash: 196
 }, cp = (t) => ({
   version: t.version,
   output: P.decode(t.output)
-}), Rk = (t) => {
+}), $k = (t) => {
   const e = [...t].sort((n, i) => i.probability - n.probability), r = (n) => {
     if (n.length === 1) return n[0].value;
     if (n.length === 2) return [n[0].value, n[1].value];
@@ -28221,7 +28229,7 @@ var Uy = (t, e) => t.findIndex((r) => Be(e, r)), Dy = (t) => {
   return {
     claimLeaf: r,
     refundLeaf: n,
-    tree: Rk([
+    tree: $k([
       { probability: 51, value: r },
       { probability: 49, value: n }
     ])
@@ -28247,7 +28255,7 @@ var Uy = (t, e) => t.findIndex((r) => Be(e, r)), Dy = (t) => {
   return t.xonlyTweakAdd(
     at.utils.taggedHash("TapTweak", t.aggPubkey, r)
   );
-}, $k = (t) => {
+}, Nk = (t) => {
   if (t.length === 32) return t;
   if (t.length === 33) {
     if (t[0] !== 2 && t[0] !== 3)
@@ -28259,15 +28267,15 @@ var Uy = (t, e) => t.findIndex((r) => Be(e, r)), Dy = (t) => {
   throw new Error(
     `Invalid public key length: expected 32 or 33 bytes, got ${t.length}`
   );
-}, Nk = (t) => Q.encode(["OP_1", $k(t)]), Mk = (t, e) => {
-  const r = Nk(t);
+}, Mk = (t) => Q.encode(["OP_1", Nk(t)]), Lk = (t, e) => {
+  const r = Mk(t);
   for (let n = 0; n < e.outputsLength; n++) {
     const i = e.getOutput(n);
     if (i.script !== void 0 && i.amount !== void 0 && Be(r, i.script))
       return { ...i, vout: n };
   }
   throw new Error("Swap output not found in transaction");
-}, Lk = new Uint8Array(64), Uk = (t, e, r) => {
+}, Uk = new Uint8Array(64), Dk = (t, e, r) => {
   if (r < BigInt(0) || r >= t.amount)
     throw new Error("fee exceeds utxo amount");
   const n = new ft({ version: 2 });
@@ -28280,9 +28288,9 @@ var Uy = (t, e) => t.findIndex((r) => Be(e, r)), Dy = (t) => {
     sequence: 4294967293
     // RBF enabled
   }), n.updateInput(0, {
-    finalScriptWitness: [Lk]
+    finalScriptWitness: [Uk]
   }), n;
-}, Dk = (t, e) => {
+}, Kk = (t, e) => {
   const r = e(BigInt(1));
   return e(
     BigInt(Math.ceil((r.vsize + r.inputsLength) * t))
@@ -28317,7 +28325,7 @@ function _n(t) {
   }
   return 0;
 }
-function Kk(t, e) {
+function Hk(t, e) {
   if (!t) return 0;
   const { percentage: r, minerFees: n } = e.reverse, i = n.lockup + n.claim;
   return r >= 100 || r < 0 || i >= t ? 0 : Math.ceil((t - i) / (1 - r / 100));
@@ -28340,7 +28348,7 @@ function fp(t, e) {
     }
   };
 }
-function Hk(t, e, r, n, i, s, o, a = 0) {
+function Vk(t, e, r, n, i, s, o, a = 0) {
   const c = new TextEncoder().encode(t), u = Ne(c), l = P.encode(u);
   let d;
   return {
@@ -28412,7 +28420,7 @@ function Hk(t, e, r, n, i, s, o, a = 0) {
         throw new Error(
           `BatchFinalizationEvent: expected connector tree has ${g.length} leaves, expected at least ${a + 1}`
         );
-      const y = Vk(
+      const y = Fk(
         e,
         o,
         g[a]
@@ -28423,7 +28431,7 @@ function Hk(t, e, r, n, i, s, o, a = 0) {
     }
   };
 }
-function Vk(t, e, r) {
+function Fk(t, e, r) {
   const n = r.id, i = r.getOutput(0);
   if (!i)
     throw new Error("connector output not found");
@@ -28457,7 +28465,7 @@ function Vk(t, e, r) {
     a
   );
 }
-var Fk = (t) => {
+var Wk = (t) => {
   const {
     network: e,
     preimageHash: r,
@@ -28499,7 +28507,7 @@ var Fk = (t) => {
     throw new Error("Failed to create VHTLC script");
   const h = e === "bitcoin" ? "ark" : "tark", p = d.address(h, u).encode();
   return { vhtlcScript: d, vhtlcAddress: p };
-}, Wk = async (t, e, r, n, {
+}, zk = async (t, e, r, n, {
   forfeitPubkey: i,
   forfeitAddress: s,
   network: o
@@ -28537,7 +28545,7 @@ var Fk = (t) => {
     o in ta ? ta[o] : ta.bitcoin
   ).decode(s);
   try {
-    const w = Hk(
+    const w = Vk(
       E,
       r,
       t,
@@ -28681,7 +28689,7 @@ var Fk = (t) => {
 function Ga(t) {
   return t[1].subarray(0, t[1].length - 1);
 }
-var zk = class nl {
+var jk = class nl {
   /** The Arkade wallet instance used for signing and address generation. */
   wallet;
   /** Provider for Ark protocol operations (VTXO management, batch joining). */
@@ -28739,7 +28747,7 @@ var zk = class nl {
       );
     if (this.indexerProvider = n, this.swapProvider = e.swapProvider, e.swapRepository ? this.swapRepository = e.swapRepository : this.swapRepository = new Ly(), e.swapManager !== !1) {
       const i = !e.swapManager || e.swapManager === !0 ? {} : e.swapManager, s = i.autoStart ?? !0;
-      this.swapManager = new wk(
+      this.swapManager = new yk(
         this.swapProvider,
         i
       ), this.swapManager.setCallbacks({
@@ -28762,7 +28770,7 @@ var zk = class nl {
           await this.signCooperativeClaimForServer(o);
         },
         saveSwap: async (o) => {
-          await yk(o, {
+          await mk(o, {
             saveReverseSwap: this.savePendingReverseSwap.bind(this),
             saveSubmarineSwap: this.savePendingSubmarineSwap.bind(this),
             saveChainSwap: this.savePendingChainSwap.bind(this)
@@ -29028,7 +29036,7 @@ var zk = class nl {
           }
           case "invoice.expired":
             await a(), n(
-              new GT({
+              new XT({
                 isRefundable: !0,
                 pendingSwap: e
               })
@@ -29138,7 +29146,7 @@ var zk = class nl {
    * @throws {Error} If preimage hash is unavailable, VHTLC not found, or already spent.
    */
   async refundVHTLC(e) {
-    const r = e.request.invoice ? gk(e.request.invoice) : e.preimageHash;
+    const r = e.request.invoice ? wk(e.request.invoice) : e.preimageHash;
     if (!r)
       throw new Error(
         `Swap ${e.id}: preimage hash is required to refund VHTLC`
@@ -29320,7 +29328,7 @@ var zk = class nl {
             break;
           case "invoice.failedToPay":
             i = !0, await a({ refundable: !0 }), n(
-              new XT({
+              new YT({
                 isRefundable: !0,
                 pendingSwap: e
               })
@@ -29328,7 +29336,7 @@ var zk = class nl {
             break;
           case "transaction.lockupFailed":
             i = !0, await a({ refundable: !0 }), n(
-              new YT({
+              new ZT({
                 isRefundable: !0,
                 pendingSwap: e
               })
@@ -29487,7 +29495,7 @@ var zk = class nl {
       );
     const n = ft.fromRaw(
       P.decode(r.transaction.hex)
-    ), i = await this.arkProvider.getInfo(), s = i.network === "bitcoin" ? ot : i.network === "mutinynet" ? Ok : Bk, o = up(
+    ), i = await this.arkProvider.getInfo(), s = i.network === "bitcoin" ? ot : i.network === "mutinynet" ? Rk : Ok, o = up(
       e.response.claimDetails.swapTree
     ), a = lp(
       ap(P.decode(e.ephemeralKey), [
@@ -29495,11 +29503,11 @@ var zk = class nl {
         He.getPublicKey(P.decode(e.ephemeralKey))
       ]),
       o.tree
-    ), c = Mk(a.aggPubkey, n), u = BigInt(
+    ), c = Lk(a.aggPubkey, n), u = BigInt(
       e.request.serverLockAmount ? e.request.serverLockAmount - e.amount : 0
-    ), l = Dk(
+    ), l = Kk(
       e.feeSatsPerByte,
-      (g) => Uk(
+      (g) => Dk(
         {
           script: c.script,
           amount: c.amount,
@@ -30004,7 +30012,7 @@ var zk = class nl {
    * @returns The commitment transaction ID.
    */
   async joinBatch(e, r, n, i, s = !0) {
-    return Wk(
+    return zk(
       this.arkProvider,
       e,
       r,
@@ -30018,7 +30026,7 @@ var zk = class nl {
    * Works for submarine, reverse, and chain swaps.
    */
   createVHTLCScript(e) {
-    return Fk(e);
+    return Wk(e);
   }
   async getFees(e, r) {
     return e && r ? this.swapProvider.getChainFees(e, r) : this.swapProvider.getFees();
@@ -30152,7 +30160,7 @@ var zk = class nl {
           id: u,
           createdAt: l,
           request: {
-            invoiceAmount: Kk(h, n),
+            invoiceAmount: Hk(h, n),
             claimPublicKey: r,
             preimageHash: f
           },
@@ -30279,19 +30287,19 @@ var zk = class nl {
    * Enrich a restored reverse swap with its preimage.
    */
   enrichReverseSwapPreimage(e, r) {
-    return mk(e, r);
+    return bk(e, r);
   }
   /**
    * Enrich a restored submarine swap with its invoice.
    */
   enrichSubmarineSwapInvoice(e, r) {
-    return bk(e, r);
+    return Ek(e, r);
   }
-}, jk = "ARKADE_SWAPS_UPDATER", qk = class Vy {
+}, qk = "ARKADE_SWAPS_UPDATER", Gk = class Vy {
   constructor(e) {
     this.swapRepository = e;
   }
-  static messageTag = jk;
+  static messageTag = qk;
   messageTag = Vy.messageTag;
   arkProvider;
   indexerProvider;
@@ -30663,7 +30671,7 @@ var zk = class nl {
       apiUrl: e.swapProvider.baseUrl,
       network: e.network
     });
-    const n = new zk({
+    const n = new jk({
       wallet: this.wallet,
       arkProvider: this.arkProvider,
       swapProvider: this.swapProvider,
@@ -30711,14 +30719,16 @@ var zk = class nl {
     }));
   }
 };
-const Gk = new Ay("arkade-service-worker"), Xk = new ky("arkade-service-worker"), Yk = new Ly("arkade-swaps"), Zk = new CT(Gk, Xk, {
-  messageHandlers: [
-    new RT(),
-    new qk(Yk)
-  ]
+self.addEventListener("message", (t) => {
+  t.data?.type === "PING" && t.ports?.[0] && t.ports[0].postMessage({ type: "PONG" });
 });
-Zk.start().catch(console.error);
-const Qk = "__BUILD_TIME__", Fy = `chimera-wallet-cache-${Qk}`;
+const Xk = new Ay(), Yk = new ky(), Zk = new Ly(), Qk = new BT(Xk, Yk, {
+  messageHandlers: [new $T(), new Gk(Zk)],
+  tickIntervalMs: 5e3,
+  messageTimeoutMs: 6e4
+});
+Qk.start().catch(console.error);
+const Jk = "__BUILD_TIME__", Fy = `chimera-wallet-cache-${Jk}`;
 self.addEventListener("install", (t) => {
   t.waitUntil(caches.open(Fy)), self.skipWaiting();
 });
