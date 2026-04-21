@@ -6,8 +6,8 @@ import {
   BoltzSwapProvider,
   FeesResponse,
   Network,
-  PendingReverseSwap,
-  PendingSubmarineSwap,
+  BoltzReverseSwap,
+  BoltzSubmarineSwap,
   setLogger,
   SwapManager,
   isReverseFinalStatus,
@@ -36,11 +36,11 @@ interface LightningContextProps {
   swapManager: SwapManager | null
   toggleConnection: () => void
   // Helper methods that delegate to arkadeLightning
-  createSubmarineSwap: (invoice: string) => Promise<PendingSubmarineSwap | null>
-  createReverseSwap: (sats: number) => Promise<PendingReverseSwap | null>
-  claimVHTLC: (swap: PendingReverseSwap) => Promise<void>
-  refundVHTLC: (swap: PendingSubmarineSwap) => Promise<void>
-  payInvoice: (swap: PendingSubmarineSwap) => Promise<{ txid: string; preimage: string }>
+  createSubmarineSwap: (invoice: string) => Promise<BoltzSubmarineSwap | null>
+  createReverseSwap: (sats: number) => Promise<BoltzReverseSwap | null>
+  claimVHTLC: (swap: BoltzReverseSwap) => Promise<void>
+  refundVHTLC: (swap: BoltzSubmarineSwap) => Promise<void>
+  payInvoice: (swap: BoltzSubmarineSwap) => Promise<{ txid: string; preimage: string }>
   getSwapHistory: () => Promise<PendingSwap[]>
   getFees: () => Promise<FeesResponse | null>
   getApiUrl: () => string | null
@@ -193,27 +193,27 @@ export const LightningProvider = ({ children }: { children: ReactNode }) => {
   const toggleConnection = () => setConnected(!connected, true)
 
   // Helper methods that delegate to arkadeLightning
-  const createSubmarineSwap = async (invoice: string): Promise<PendingSubmarineSwap | null> => {
+  const createSubmarineSwap = async (invoice: string): Promise<BoltzSubmarineSwap | null> => {
     if (!arkadeLightning) return null
     return arkadeLightning.createSubmarineSwap({ invoice })
   }
 
-  const createReverseSwap = async (sats: number): Promise<PendingReverseSwap | null> => {
+  const createReverseSwap = async (sats: number): Promise<BoltzReverseSwap | null> => {
     if (!arkadeLightning) return null
     return arkadeLightning.createReverseSwap({ amount: sats, description: 'Lightning Invoice' })
   }
 
-  const claimVHTLC = async (swap: PendingReverseSwap): Promise<void> => {
+  const claimVHTLC = async (swap: BoltzReverseSwap): Promise<void> => {
     if (!arkadeLightning) return
     await arkadeLightning.claimVHTLC(swap)
   }
 
-  const refundVHTLC = async (swap: PendingSubmarineSwap): Promise<void> => {
+  const refundVHTLC = async (swap: BoltzSubmarineSwap): Promise<void> => {
     if (!arkadeLightning) return
     await arkadeLightning.refundVHTLC(swap)
   }
 
-  const payInvoice = async (pendingSwap: PendingSubmarineSwap): Promise<{ txid: string; preimage: string }> => {
+  const payInvoice = async (pendingSwap: BoltzSubmarineSwap): Promise<{ txid: string; preimage: string }> => {
     if (!arkadeLightning || !svcWallet) throw new Error('Lightning not initialized')
     if (!pendingSwap) throw new Error('No pending swap found')
     if (!pendingSwap.response.address) throw new Error('No swap address found')
@@ -253,8 +253,8 @@ export const LightningProvider = ({ children }: { children: ReactNode }) => {
     let counter = 0
 
     // Restore swaps from Boltz endpoint
-    let reverseSwaps: PendingReverseSwap[] = []
-    let submarineSwaps: PendingSubmarineSwap[] = []
+    let reverseSwaps: BoltzReverseSwap[] = []
+    let submarineSwaps: BoltzSubmarineSwap[] = []
     try {
       const result = await arkadeLightning.restoreSwaps()
       reverseSwaps = result.reverseSwaps
