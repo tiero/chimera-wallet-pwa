@@ -47,13 +47,7 @@ export default function ReceiveAmount() {
   const { navigate } = useContext(NavigationContext)
   const { notifyPaymentReceived } = useContext(NotificationsContext)
   const { arkadeLightning, createReverseSwap, calcReverseSwapFee } = useContext(LightningContext)
-  const {
-    validLnSwap,
-    validUtxoTx,
-    validVtxoTx,
-    utxoTxsAllowed,
-    vtxoTxsAllowed,
-  } = useContext(LimitsContext)
+  const { validLnSwap, validUtxoTx, validVtxoTx, utxoTxsAllowed, vtxoTxsAllowed } = useContext(LimitsContext)
   const { balance, svcWallet, wallet } = useContext(WalletContext)
 
   const [error, setError] = useState('')
@@ -132,7 +126,7 @@ export default function ReceiveAmount() {
   const showFaucetButton = balance === 0 && faucetAvailable
   const showLightningFees = satoshis && isLightningMethod
   const reverseSwapFee = calcReverseSwapFee(satoshis)
-  
+
   // For Lightning, require amount before showing QR code
   const needsAmountInput = isLightningMethod && !satoshis
 
@@ -142,12 +136,18 @@ export default function ReceiveAmount() {
   // Helper to get icon component
   const getIconComponent = (iconType?: InfoItemIcon) => {
     switch (iconType) {
-      case 'time': return <WhenIcon />
-      case 'fees': return <FeesIcon />
-      case 'warning': return undefined
-      case 'instruction': return undefined
-      case 'info': return <InfoIcon />
-      default: return <InfoIcon />
+      case 'time':
+        return <WhenIcon />
+      case 'fees':
+        return <FeesIcon />
+      case 'warning':
+        return undefined
+      case 'instruction':
+        return undefined
+      case 'info':
+        return <InfoIcon />
+      default:
+        return <InfoIcon />
     }
   }
 
@@ -296,21 +296,13 @@ export default function ReceiveAmount() {
         <Padded>
           <FlexCol>
             <ErrorMessage error={Boolean(error)} text={error} />
-            
+
             {/* Amount Input for Lightning */}
             {isLightningMethod ? (
-              <InlineAmountInput
-                value={satoshis}
-                onChange={setSatoshis}
-                asset={selectedAsset}
-              />
+              <InlineAmountInput value={satoshis} onChange={setSatoshis} asset={selectedAsset} />
             ) : null}
-            
-            <AssetSelector
-              label='Asset'
-              selected={selectedAsset}
-              onSelect={setSelectedAsset}
-            />
+
+            <AssetSelector label='Asset' selected={selectedAsset} onSelect={setSelectedAsset} />
             <NetworkSelector
               label='Network'
               selected={selectedMethod}

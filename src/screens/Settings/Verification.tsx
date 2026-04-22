@@ -85,10 +85,10 @@ export default function Verification() {
           try {
             const tokens = await confirmMagicLink(kycAuthParams)
             saveKycTokens(tokens, kycAuthParams.uid)
-            
+
             // Clear the auth params after use
             setKycAuthParams(undefined)
-            
+
             // Immediately fetch status using the token we just received
             const statusResponse = await fetchKycStatus(tokens.accessToken)
             setKycStatus(statusResponse.status)
@@ -320,9 +320,7 @@ export default function Verification() {
             <FlexCol gap='1.5rem'>
               <div>
                 <Text>Enter your email address</Text>
-                <TextSecondary>
-                  Enter your email address to begin your KYC verification.
-                </TextSecondary>
+                <TextSecondary>Enter your email address to begin your KYC verification.</TextSecondary>
               </div>
               <IonInput
                 value={email}
@@ -340,13 +338,8 @@ export default function Verification() {
                   '--padding-start': '0.75rem',
                 }}
               />
-              {emailError ? (
-                <ErrorMessage error text={emailError} />
-              ) : null}
-              <Button
-                onClick={handleEmailContinue}
-                label='Continue'
-              />
+              {emailError ? <ErrorMessage error text={emailError} /> : null}
+              <Button onClick={handleEmailContinue} label='Continue' />
             </FlexCol>
           </Padded>
         </Content>
@@ -395,9 +388,7 @@ export default function Verification() {
                   <SuccessMessage />
                   <div style={{ textAlign: 'center' }}>
                     <Text>Your identity has been verified!</Text>
-                    <TextSecondary>
-                      You have full access to all features.
-                    </TextSecondary>
+                    <TextSecondary>You have full access to all features.</TextSecondary>
                   </div>
                 </>
               )}
@@ -411,9 +402,7 @@ export default function Verification() {
                   </TextSecondary>
                   {statusMessage ? (
                     <div style={{ marginTop: '0.5rem' }}>
-                      <TextSecondary>
-                        {statusMessage}
-                      </TextSecondary>
+                      <TextSecondary>{statusMessage}</TextSecondary>
                     </div>
                   ) : null}
                 </div>
@@ -428,9 +417,7 @@ export default function Verification() {
                   </TextSecondary>
                   {statusMessage ? (
                     <div style={{ marginTop: '0.5rem' }}>
-                      <TextSecondary>
-                        {statusMessage}
-                      </TextSecondary>
+                      <TextSecondary>{statusMessage}</TextSecondary>
                     </div>
                   ) : null}
                   <div style={{ marginTop: '1.5rem' }}>
