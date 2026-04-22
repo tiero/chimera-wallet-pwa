@@ -1,4 +1,5 @@
 import { isTestEnvironment } from '../lib/appConfig'
+import { getKycApiUrl } from '../lib/kyc'
 
 // Base URLs
 const CHIMERA_API_STAGING = 'https://api.staging.chimerawallet.com/v1'
@@ -256,18 +257,20 @@ export const createBankWithdraw = async (params: {
   fromAmount: number
   fromAsset: string
   toAsset: string
+  circuit?: BankCircuit
   bankData?: BankData
 }): Promise<BankWithdrawResponse> => {
-  const { email, fromAmount, fromAsset, toAsset, bankData } = params
+  const { email, fromAmount, fromAsset, toAsset, circuit, bankData } = params
   const baseUrl = getBaseUrl()
 
-  // When no bank data is provided (KYC email flow), send email-only payload
+  // When no bank data is provided (KYC email flow), send email-only payload with destination_type
   if (!bankData) {
     const emailOnlyPayload = {
       email,
       from_amount: fromAmount,
       from_asset: fromAsset,
       to_asset: toAsset,
+      ...(circuit ? { destination_type: circuit } : {}),
     }
     const emailOnlyResponse = await fetch(`${baseUrl}/otc/withdraw/`, {
       method: 'POST',
@@ -352,4 +355,74 @@ export const createBankWithdraw = async (params: {
   }
 
   return response.json()
+}
+
+// ============================================
+// Referral API Functions
+// ============================================
+
+export interface ReferralLinkResponse {
+  link: string
+}
+
+export interface ReferralRewardResponse {
+  balance: number // CHF
+}
+
+export const getReferralLink = async (accessToken: string): Promise<ReferralLinkResponse> => {
+  const baseUrl = getKycApiUrl()
+  const response = await fetch(`${baseUrl}/api/Referrals/link`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+  })
+  if (!response.ok) {
+    throw new Error(`Failed to get referral link: ${response.status}`)
+  }
+  const data = await response.json()
+  // Handle various C# API response shapes
+  const link: string =
+    typeof data === 'string'
+      ? data
+      : data.referralLink ?? ''
+  return { link }
+}
+
+export const getReferralReward = async (accessToken: string): Promise<ReferralRewardResponse> => {
+  const baseUrl = getKycApiUrl()
+  const response = await fetch(`${baseUrl}/api/Referrals/reward-balance`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+  })
+  if (!response.ok) {
+    throw new Error(`Failed to get referral reward: ${response.status}`)
+  }
+  const data = await response.json()
+  // Handle various C# API response shapes
+  const balance: number =
+    typeof data === 'number'
+      ? data
+      : data.rewardBalance ?? 0
+  return { balance }
+}
+
+export const claimReferralReward = async (accessToken: string, address: string): Promise<void> => {
+  const baseUrl = getKycApiUrl()
+  const response = await fetch(`${baseUrl}/api/Referrals/reward-address`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ address }),
+  })
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(errorData.message || `Failed to claim referral reward: ${response.status}`)
+  }
 }

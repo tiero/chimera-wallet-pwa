@@ -161,6 +161,7 @@ export default function BankSend() {
         fromAmount: numAmount,
         fromAsset: 'BTC-ARK',
         toAsset: currency,
+        circuit,
         bankData,
       })
 

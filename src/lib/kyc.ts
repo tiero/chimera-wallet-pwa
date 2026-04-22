@@ -348,6 +348,111 @@ export const parseKycDeepLink = (hashOrQuery: string): KycAuthParams | null => {
   return null
 }
 
+// ─── Magic Link / Session Polling ────────────────────────────────────────────
+
+export interface CheckSessionLoginModel {
+  userId: string
+  entityId: string
+  email: string
+  username: string
+  hasVerifiedEmail: boolean
+  tfaEnabled: boolean
+  phoneConfirmed: boolean
+  token: {
+    accessToken: string
+    expiryTime: string
+    refreshToken: string
+  }
+  verificationStatus: {
+    status: string
+    notes: string
+    veriffStatus: string
+    documentsSubmitted: string[]
+  }
+}
+
+export interface CheckSessionResponse {
+  isVerified: boolean
+  loginModel?: CheckSessionLoginModel
+}
+
+/**
+ * Send a magic link email to start the KYC authentication flow
+ */
+export const requestMagicLink = async (email: string, sessionId: string): Promise<void> => {
+  const apiUrl = getKycApiUrl()
+  const response = await fetch(`${apiUrl}/api/auth/magic-link`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, sessionId }),
+  })
+  if (!response.ok) {
+    throw new Error('Failed to send magic link')
+  }
+}
+
+/**
+ * Poll to check whether the user has clicked the magic link
+ */
+export const checkSessionVerified = async (
+  email: string,
+  sessionId: string,
+): Promise<CheckSessionResponse> => {
+  const apiUrl = getKycApiUrl()
+  const response = await fetch(`${apiUrl}/api/auth/check-session-verified`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, sessionId }),
+  })
+  if (!response.ok) {
+    throw new Error('Failed to check session')
+  }
+  return response.json()
+}
+
+/**
+ * Map IDFlow's verification status string to our KycStatus type
+ */
+export const mapVerificationStatus = (status?: string): KycStatus => {
+  if (!status) return 'not_started'
+  switch (status.toLowerCase()) {
+    case 'verified':
+    case 'confirmed':
+    case 'approved':
+      return 'confirmed'
+    case 'pending':
+      return 'pending'
+    case 'rejected':
+      return 'rejected'
+    case 'expired':
+      return 'expired'
+    default:
+      return 'not_started'
+  }
+}
+
+/**
+ * Persist tokens and status from a verified session's loginModel
+ */
+export const saveKycTokensFromLoginModel = (loginModel: CheckSessionLoginModel): void => {
+  const { token, userId } = loginModel
+  let expiresIn = 3600
+  if (token.expiryTime) {
+    const expiryDate = new Date(token.expiryTime)
+    expiresIn = Math.max(0, Math.floor((expiryDate.getTime() - Date.now()) / 1000))
+  }
+  saveKycTokens(
+    { accessToken: token.accessToken, refreshToken: token.refreshToken, expiresIn },
+    userId,
+  )
+  if (loginModel.email) saveKycEmail(loginModel.email)
+  if (loginModel.verificationStatus?.status) {
+    saveKycStatus(mapVerificationStatus(loginModel.verificationStatus.status))
+  }
+}
+
+// ─── Bank transfer helpers ────────────────────────────────────────────────────
+
 /**
  * Get user email for bank transfers
  * Returns KYC email if available, otherwise generates a dummy email
