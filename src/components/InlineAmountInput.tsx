@@ -30,7 +30,7 @@ export default function InlineAmountInput({
   bankCurrency,
 }: InlineAmountInputProps) {
   const { config } = useContext(ConfigContext)
-  const { toFiat, fromFiat } = useContext(FiatContext)
+  const { toFiat, fromFiat, toCurrency, fromCurrency } = useContext(FiatContext)
   
   // Track whether user is entering in crypto or fiat
   const [inputMode, setInputMode] = useState<'crypto' | 'fiat'>('crypto')
@@ -42,8 +42,9 @@ export default function InlineAmountInput({
   
   // Calculate display values based on input mode
   // For bank transfers: value is in fiat cents/units, not satoshis
+  const activeCurrency = bankCurrency || config.fiat
   const cryptoValue = isBankTransfer
-    ? value / 50000 // Rough BTC estimate for display (will need real rate)
+    ? fromCurrency(value, activeCurrency) / Math.pow(10, assetInfo.precision)
     : value / Math.pow(10, assetInfo.precision)
   
   const fiatValue = isBankTransfer
@@ -79,9 +80,8 @@ export default function InlineAmountInput({
             // User entered fiat amount directly
             finalValue = numValue
           } else {
-            // User entered BTC, convert to fiat
-            // Using rough conversion - in production would use real rate
-            finalValue = numValue * 50000
+            // User entered BTC, convert to fiat using real exchange rate
+            finalValue = toCurrency(Math.floor(numValue * Math.pow(10, assetInfo.precision)), activeCurrency)
           }
         } else {
           // Regular crypto mode
