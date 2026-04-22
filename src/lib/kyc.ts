@@ -45,18 +45,14 @@ export const getKycWebviewUrl = (): string => {
   if (import.meta.env.VITE_KYC_WEBVIEW_URL) {
     return import.meta.env.VITE_KYC_WEBVIEW_URL
   }
-  return isTestEnvironment()
-    ? 'https://demo-staging.idflow.ch/'
-    : 'https://demo.idflow.ch/'
+  return isTestEnvironment() ? 'https://demo-staging.idflow.ch/' : 'https://demo.idflow.ch/'
 }
 
 export const getKycApiUrl = (): string => {
   if (import.meta.env.VITE_KYC_API_URL) {
     return import.meta.env.VITE_KYC_API_URL
   }
-  return isTestEnvironment()
-    ? 'https://idflow-staging.azurewebsites.net'
-    : 'https://api.idflow.ch'
+  return isTestEnvironment() ? 'https://idflow-staging.azurewebsites.net' : 'https://api.idflow.ch'
 }
 
 /**
@@ -165,7 +161,7 @@ export const confirmMagicLink = async (params: KycAuthParams): Promise<KycTokens
   }
 
   const data = await response.json()
-  
+
   // Token data is nested inside a 'token' object
   const tokenData = data.token
   if (!tokenData || !tokenData.accessToken) {
@@ -258,7 +254,7 @@ export const getValidAccessToken = async (): Promise<string | null> => {
  * @param providedAccessToken - Optional access token to use directly (bypasses storage lookup)
  */
 export const fetchKycStatus = async (providedAccessToken?: string): Promise<KycStatusResponse> => {
-  const accessToken = providedAccessToken || await getValidAccessToken()
+  const accessToken = providedAccessToken || (await getValidAccessToken())
 
   if (!accessToken) {
     return { status: 'not_started', message: 'No valid authentication' }
@@ -311,7 +307,7 @@ export const fetchKycStatus = async (providedAccessToken?: string): Promise<KycS
 export const parseKycDeepLink = (hashOrQuery: string): KycAuthParams | null => {
   // Remove leading # if present
   const cleanInput = hashOrQuery.startsWith('#') ? hashOrQuery.slice(1) : hashOrQuery
-  
+
   // Check if it starts with kyc?
   if (cleanInput.startsWith('kyc?')) {
     const queryString = cleanInput.slice(4) // Remove 'kyc?'

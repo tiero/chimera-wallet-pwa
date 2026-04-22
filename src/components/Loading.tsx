@@ -5,8 +5,8 @@ export default function Loading({ text }: { text?: string }) {
     <CenterScreen>
       <div style={{ position: 'relative', width: '400px', height: '400px' }}>
         <img
-          src="/images/background_logo.svg"
-          alt="Logo"
+          src='/images/background_logo.svg'
+          alt='Logo'
           style={{
             width: '100%',
             height: '100%',
@@ -24,9 +24,9 @@ export default function Loading({ text }: { text?: string }) {
             height: '40px',
           }}
         >
-          <div className="spinner-ring" />
-          <div className="spinner-ring-secondary" />
-          <div className="spinner-glow" />
+          <div className='spinner-ring' />
+          <div className='spinner-ring-secondary' />
+          <div className='spinner-glow' />
         </div>
       </div>
       <style>

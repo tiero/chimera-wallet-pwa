@@ -175,7 +175,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     }
     // if no deep link, don't navigate (let other effects handle default navigation)
     if (!deepLinkInfo?.appId) return
-    
+
     // if app url is present, navigate to it
     switch (deepLinkInfo.appId) {
       case 'boltz':

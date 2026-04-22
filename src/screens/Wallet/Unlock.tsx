@@ -120,7 +120,7 @@ export default function Unlock() {
   // Add timeout to prevent infinite loading
   useEffect(() => {
     if (!unlocking) return
-    
+
     const timeout = setTimeout(() => {
       if (unlocking && !dataReady) {
         setTimeoutReached(true)
@@ -129,7 +129,7 @@ export default function Unlock() {
         consoleError(new Error('Unlock timeout'), 'Wallet unlock exceeded 30 seconds')
       }
     }, 30000) // 30 second timeout
-    
+
     return () => clearTimeout(timeout)
   }, [unlocking, dataReady])
 
@@ -137,7 +137,7 @@ export default function Unlock() {
   if (unlocking && !timeoutReached) {
     return <Loading text='Unlocking wallet...' />
   }
-  
+
   // If unlocked but data not ready and timeout not reached, keep showing loading
   if (unlocked && !dataReady && !timeoutReached) {
     return <Loading text='Loading wallet data...' />

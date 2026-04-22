@@ -46,27 +46,31 @@ self.addEventListener('install', (event: ExtendableEvent) => {
 // activate event: clean up old caches
 self.addEventListener('activate', (event: ExtendableEvent) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      // Delete ALL old caches, keeping only the current one
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName === CACHE_NAME) return
-          console.log('Deleting old cache:', cacheName)
-          return caches.delete(cacheName)
-        }),
-      )
-    }).then(() => {
-      // Force reload all clients after cache cleanup
-      return self.clients.matchAll({
-        includeUncontrolled: true,
-        type: 'window',
+    caches
+      .keys()
+      .then((cacheNames) => {
+        // Delete ALL old caches, keeping only the current one
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            if (cacheName === CACHE_NAME) return
+            console.log('Deleting old cache:', cacheName)
+            return caches.delete(cacheName)
+          }),
+        )
       })
-    }).then((clients) => {
-      clients.forEach((client) => {
-        console.log('Sending reload message to client')
-        client.postMessage({ type: 'RELOAD_PAGE' })
+      .then(() => {
+        // Force reload all clients after cache cleanup
+        return self.clients.matchAll({
+          includeUncontrolled: true,
+          type: 'window',
+        })
       })
-    }),
+      .then((clients) => {
+        clients.forEach((client) => {
+          console.log('Sending reload message to client')
+          client.postMessage({ type: 'RELOAD_PAGE' })
+        })
+      }),
   )
   self.clients.claim() // take control of clients immediately
 })

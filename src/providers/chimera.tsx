@@ -124,7 +124,7 @@ export const getSupportedAssets = async (): Promise<SupportedAssetsResponse> => 
 
 /**
  * Get order status by ID
- * 
+ *
  * Orders created via /otc/deposit/ or /otc/withdraw/ are regular Chimera orders
  * and can be queried using the /order/info/<id>/ endpoint.
  */
@@ -135,7 +135,7 @@ export const getOrderStatus = async (orderId: string): Promise<ChimeraOrder> => 
 
   const baseUrl = getBaseUrl()
   const url = `${baseUrl}/order/info/${orderId}/`
-  
+
   const response = await fetch(url, {
     method: 'GET',
     headers: {
@@ -149,12 +149,12 @@ export const getOrderStatus = async (orderId: string): Promise<ChimeraOrder> => 
   }
 
   const data = await response.json()
-  
+
   // The endpoint returns { order: ChimeraOrder }, extract the order
   if (data.order) {
     return data.order
   }
-  
+
   return data
 }
 
@@ -221,7 +221,7 @@ export interface BankWithdrawResponse {
 export const createBankDeposit = async (payload: BankDepositPayload): Promise<BankDepositResponse> => {
   const baseUrl = getBaseUrl()
   const url = `${baseUrl}/otc/deposit/`
-  
+
   const response = await fetch(url, {
     method: 'POST',
     headers: {
@@ -239,7 +239,7 @@ export const createBankDeposit = async (payload: BankDepositPayload): Promise<Ba
   }
 
   const data = await response.json()
-  
+
   if (data.message) {
     throw new Error(data.message)
   }
