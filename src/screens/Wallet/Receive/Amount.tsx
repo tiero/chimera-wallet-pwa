@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react'
+import { useContext, useEffect, useRef, useState } from 'react'
 import Button from '../../../components/Button'
 import ButtonsOnBottom from '../../../components/ButtonsOnBottom'
 import { FlowContext } from '../../../providers/flow'
@@ -162,15 +162,41 @@ export default function ReceiveAmount() {
     if (invoice) setShowQrCode(true)
   }, [invoice, address, arkAddress, satoshis])
 
+  // Invalidate any existing invoice when the user edits the Lightning amount,
+  // so the swap-creation effect below regenerates at the new amount instead of
+  // leaving a stale invoice pinned at whatever amount won the first race.
+  const isFirstSatoshisRender = useRef(true)
+  useEffect(() => {
+    if (isFirstSatoshisRender.current) {
+      isFirstSatoshisRender.current = false
+      return
+    }
+    if (!isLightningMethod) return
+    setInvoice('')
+    setShowQrCode(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [satoshis])
+
   useEffect(() => {
     if (invoice) {
       setShowQrCode(true)
       return
     }
 
-    if (useLightning && wallet && svcWallet && arkadeLightning) {
+    if (!(useLightning && wallet && svcWallet && arkadeLightning)) {
+      setShowQrCode(true)
+      return
+    }
+
+    // Debounce: wait until the user stops typing before hitting Boltz.
+    // Without this, each keystroke (1 → 10 → 100 → 10_000 → 100_000) fires a
+    // parallel createReverseSwap; the first one to succeed (at Boltz's min
+    // ≈10_000 sats) wins and the real amount is never requested.
+    let cancelled = false
+    const handle = setTimeout(() => {
       createReverseSwap(satoshis)
         .then((pendingSwap) => {
+          if (cancelled) return
           if (!pendingSwap) throw new Error('Failed to create reverse swap')
           const invoice = pendingSwap.response.invoice
           setRecvInfo({ ...recvInfo, invoice })
@@ -178,20 +204,27 @@ export default function ReceiveAmount() {
           arkadeLightning
             .waitAndClaim(pendingSwap)
             .then(() => {
-              setRecvInfo({ ...recvInfo, satoshis: pendingSwap.response.onchainAmount })
-              notifyPaymentReceived(pendingSwap.response.onchainAmount)
+              if (cancelled) return
+              const onchainSats = pendingSwap.response.onchainAmount ?? satoshis
+              setRecvInfo({ ...recvInfo, satoshis: onchainSats })
+              notifyPaymentReceived(onchainSats)
             })
             .catch((error) => {
+              if (cancelled) return
               setShowQrCode(true)
               consoleError(error, 'Error claiming reverse swap:')
             })
         })
         .catch((error) => {
+          if (cancelled) return
           setShowQrCode(true)
           consoleError(error, 'Error creating reverse swap:')
         })
-    } else {
-      setShowQrCode(true)
+    }, 700)
+
+    return () => {
+      cancelled = true
+      clearTimeout(handle)
     }
   }, [satoshis, arkadeLightning, invoice, useLightning])
 
@@ -199,13 +232,17 @@ export default function ReceiveAmount() {
     if (!svcWallet) return
 
     const listenForPayments = (event: MessageEvent) => {
+      if (!event.data) return
+      // v0.4 SDK wraps broadcast data under `payload`; fall back to the flat
+      // shape for safety in case an older worker build is still active.
+      const payload = event.data.payload ?? event.data
       let incomingSats = 0
-      if (event.data && event.data.type === 'VTXO_UPDATE') {
-        const newVtxos = event.data.newVtxos as { value: number }[]
+      if (event.data.type === 'VTXO_UPDATE') {
+        const newVtxos = (payload?.newVtxos ?? []) as { value: number }[]
         incomingSats = newVtxos.reduce((acc, v) => acc + v.value, 0)
       }
-      if (event.data && event.data.type === 'UTXO_UPDATE') {
-        const coins = event.data.coins as { value: number }[]
+      if (event.data.type === 'UTXO_UPDATE') {
+        const coins = (payload?.coins ?? []) as { value: number }[]
         incomingSats = coins.reduce((acc, v) => acc + v.value, 0)
       }
       if (incomingSats) {
