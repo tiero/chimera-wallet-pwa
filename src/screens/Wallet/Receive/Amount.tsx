@@ -163,8 +163,8 @@ export default function ReceiveAmount() {
   }, [invoice, address, arkAddress, satoshis])
 
   // Invalidate any existing invoice when the user edits the Lightning amount,
-  // so the swap-creation effect below regenerates at the new amount instead of
-  // leaving a stale invoice pinned at whatever amount won the first race.
+  // so the swap-creation effect below regenerates at the new amount instead
+  // of leaving a stale invoice pinned at whatever amount won the first race.
   const isFirstSatoshisRender = useRef(true)
   useEffect(() => {
     if (isFirstSatoshisRender.current) {
@@ -189,8 +189,8 @@ export default function ReceiveAmount() {
     }
 
     // Debounce: wait until the user stops typing before hitting Boltz.
-    // Without this, each keystroke (1 → 10 → 100 → 10_000 → 100_000) fires a
-    // parallel createReverseSwap; the first one to succeed (at Boltz's min
+    // Without this, each keystroke (1 → 10 → 100 → 10_000 → 100_000) fires
+    // a parallel createReverseSwap; the first one to succeed (at Boltz's min
     // ≈10_000 sats) wins and the real amount is never requested.
     let cancelled = false
     const handle = setTimeout(() => {

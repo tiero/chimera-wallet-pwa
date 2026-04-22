@@ -8,6 +8,8 @@ import { ConfigContext } from './config'
 type FiatContextProps = {
   fromFiat: (fiat?: number) => Satoshis
   toFiat: (sats?: Satoshis) => number
+  fromCurrency: (fiat: number, currency: string) => Satoshis
+  toCurrency: (sats: Satoshis, currency: string) => number
   updateFiatPrices: () => void
 }
 
@@ -16,6 +18,8 @@ const emptyFiatPrices: FiatPrices = { eur: 0, usd: 0, chf: 0 }
 export const FiatContext = createContext<FiatContextProps>({
   fromFiat: () => 0,
   toFiat: () => 0,
+  fromCurrency: () => 0,
+  toCurrency: () => 0,
   updateFiatPrices: () => {},
 })
 
@@ -43,6 +47,20 @@ export const FiatProvider = ({ children }: { children: ReactNode }) => {
     if (config.fiat === Fiats.CHF) return toCHF(sats)
     return toUSD(sats)
   }
+  const fromCurrency = (fiat: number, currency: string) => {
+    const cur = currency.toLowerCase()
+    if (cur === 'eur') return fromEUR(fiat)
+    if (cur === 'chf') return fromCHF(fiat)
+    if (cur === 'usd') return fromUSD(fiat)
+    return fromFiat(fiat)
+  }
+  const toCurrency = (sats: Satoshis, currency: string) => {
+    const cur = currency.toLowerCase()
+    if (cur === 'eur') return toEUR(sats)
+    if (cur === 'chf') return toCHF(sats)
+    if (cur === 'usd') return toUSD(sats)
+    return toFiat(sats)
+  }
 
   const updateFiatPrices = async () => {
     if (loading) return
@@ -57,5 +75,5 @@ export const FiatProvider = ({ children }: { children: ReactNode }) => {
     updateFiatPrices()
   }, [])
 
-  return <FiatContext.Provider value={{ fromFiat, toFiat, updateFiatPrices }}>{children}</FiatContext.Provider>
+  return <FiatContext.Provider value={{ fromFiat, toFiat, fromCurrency, toCurrency, updateFiatPrices }}>{children}</FiatContext.Provider>
 }
