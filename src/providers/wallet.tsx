@@ -12,7 +12,16 @@ import { parseKycDeepLink } from '../lib/kyc'
 import { consoleError } from '../lib/logs'
 import { Tx, Vtxo, Wallet } from '../lib/types'
 import { calcBatchLifetimeMs, calcNextRollover } from '../lib/wallet'
-import { ArkNote, ServiceWorkerWallet, NetworkName, SingleKey } from '@arkade-os/sdk'
+import {
+  ArkNote,
+  IndexedDBContractRepository,
+  IndexedDBWalletRepository,
+  NetworkName,
+  ServiceWorkerWallet,
+  SingleKey,
+} from '@arkade-os/sdk'
+import { IndexedDBStorageAdapter } from '@arkade-os/sdk/adapters/indexedDB'
+import { IndexedDbSwapRepository, migrateToSwapRepository } from '@arkade-os/boltz-swap'
 import { hex } from '@scure/base'
 import * as secp from '@noble/secp256k1'
 import { ConfigContext } from './config'
@@ -217,13 +226,37 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     maxRetries?: number
   }) => {
     try {
+      // Main-thread repositories kept consistent with the ones the service
+      // worker constructs (same IndexedDB). Passed in via `storage` so
+      // svcWallet.walletRepository / contractRepository read the same data.
+      const walletRepository = new IndexedDBWalletRepository()
+      const contractRepository = new IndexedDBContractRepository()
+
       // create service worker wallet
       const svcWallet = await ServiceWorkerWallet.setup({
         serviceWorkerPath: '/wallet-service-worker.mjs',
         identity: SingleKey.fromHex(privateKey),
         arkServerUrl,
         esploraUrl,
+        storage: { walletRepository, contractRepository },
+        settlementConfig: {
+          vtxoThreshold: wallet.thresholdMs ? Math.floor(wallet.thresholdMs / 1000) : 1,
+        },
+        messageTimeouts: { SETTLE: 60_000, SEND: 60_000 },
       })
+
+      // Migrate legacy swap data (V1 ContractRepositoryImpl collections under
+      // the 'arkade-service-worker' DB) into the new IndexedDbSwapRepository
+      // before LightningProvider reads from it. Idempotent — writes a
+      // done-flag on first successful run and no-ops thereafter. Catches the
+      // "object stores was not found" case internally for fresh wallets.
+      try {
+        const oldStorage = new IndexedDBStorageAdapter('arkade-service-worker')
+        await migrateToSwapRepository(oldStorage, new IndexedDbSwapRepository())
+      } catch (err) {
+        consoleError(err, 'Error migrating swap repository')
+      }
+
       setSvcWallet(svcWallet)
 
       // handle messages from the service worker
