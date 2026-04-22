@@ -1,13 +1,10 @@
-import { BoltzReverseSwap, BoltzSubmarineSwap } from '@arkade-os/boltz-swap'
-import { IndexedDBStorageAdapter } from '@arkade-os/sdk/adapters/indexedDB'
-import { ContractRepositoryImpl } from '@arkade-os/sdk'
+import { BoltzReverseSwap, BoltzSubmarineSwap, IndexedDbSwapRepository } from '@arkade-os/boltz-swap'
 import { getPublicKey } from 'nostr-tools/pure'
 import { NostrStorage } from './nostr'
 import { Config } from './types'
 import { consoleError } from './logs'
 
-const storage = new IndexedDBStorageAdapter('arkade-service-worker')
-const contractRepo = new ContractRepositoryImpl(storage)
+const swapRepo = new IndexedDbSwapRepository()
 
 type NostrStorageData = {
   config?: Config
@@ -76,8 +73,8 @@ export class BackupProvider {
   fullBackup = async (config: Config) => {
     const data: NostrStorageData = {
       config,
-      reverseSwaps: (await contractRepo.getContractCollection('reverseSwaps')) as BoltzReverseSwap[],
-      submarineSwaps: (await contractRepo.getContractCollection('submarineSwaps')) as BoltzSubmarineSwap[],
+      reverseSwaps: await swapRepo.getAllSwaps<BoltzReverseSwap>({ type: 'reverse' }),
+      submarineSwaps: await swapRepo.getAllSwaps<BoltzSubmarineSwap>({ type: 'submarine' }),
     }
 
     const dataSize = JSON.stringify(data).length
@@ -107,11 +104,11 @@ export class BackupProvider {
     if (data?.config) updateConfig(data.config)
 
     for (const swap of data?.reverseSwaps ?? []) {
-      await contractRepo.saveToContractCollection('reverseSwaps', swap, 'id')
+      await swapRepo.saveSwap(swap)
     }
 
     for (const swap of data?.submarineSwaps ?? []) {
-      await contractRepo.saveToContractCollection('submarineSwaps', swap, 'id')
+      await swapRepo.saveSwap(swap)
     }
   }
 
