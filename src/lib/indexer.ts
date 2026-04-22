@@ -14,10 +14,9 @@ export class Indexer {
 
   constructor(aspInfo: AspInfo) {
     this.provider = new RestIndexerProvider(aspInfo.url)
-    // Use a dedicated DB so the legacy IndexedDBStorageAdapter schema doesn't
-    // collide with the v0.4 IndexedDBWalletRepository/IndexedDBContractRepository
-    // that own the 'arkade-service-worker' database. Without this split, calls
-    // to getContractCollection throw "object stores was not found".
+    // Dedicated DB: the v0.4 IndexedDBWalletRepository / IndexedDBContractRepository
+    // own 'arkade-service-worker' with a different object-store schema, so calls
+    // to the legacy getContractCollection here would throw "object stores not found".
     const storage = new IndexedDBStorageAdapter('arkade-indexer-cache')
     this.contractRepo = new ContractRepositoryImpl(storage)
   }
